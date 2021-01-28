@@ -3,33 +3,121 @@ from time import sleep
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
 import datetime as dt
-from itertools import cycle
 import logging
+from tkinter import *
+from tkinter import messagebox
+"""
+This program can be initial multiple bots together but if only we open new program for it
+like we click on the "robot.py" and open two terminal and in which we type our username & password
+and the bot will do the algorithm
 
+ALGORITHM: 
+    1 - start buying/selling from start time to the end time
+    2 - when we bought/sold the stock the bot should break out or goto other stock
+    3 - we must make sure that as the bot buys/sells the stock doesn't buy/sell it again
+    
+"""
+
+# Using logging module to see what error did we encountered
 logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
-# TODO: make GUI
-# TODO: make usernames & passwords dynamic
-username = ''
-password = ''
+
+def buy():
+    global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
+    username = user_entry.get()
+    password = password_entry.get()
+    stock = stock_entry.get()
+    stock_price = stock_price_entry.get()
+    stock_quantity = stock_quantity_entry.get()
+    start_time = start_time_entry.get()
+    end_time = end_time_entry.get()
+    trade_type = 'b'
+    call()
 
 
+def sell():
+    global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
+    username = user_entry.get()
+    password = password_entry.get()
+    stock = stock_entry.get()
+    stock_price = stock_price_entry.get()
+    stock_quantity = stock_quantity_entry.get()
+    start_time = start_time_entry.get()
+    end_time = end_time_entry.get()
+    trade_type = 's'
+    call()
+
+
+def ui():
+    root = Tk()
+    root.title("Stock Bot")
+    root.geometry('400x400')
+    user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
+    user_label.grid(row=1, column=1, padx=50, pady=15)
+
+    global user_entry
+    user_entry = Entry(root)
+    user_entry.grid(row=1, column=2)
+
+    password_label = Label(root, text="password", font=("Helvatica", 10), fg='red')
+    password_label.grid(row=2, column=1)
+
+    global password_entry
+    password_entry = Entry(root)
+    password_entry.grid(row=2, column=2, padx=70)
+
+    stock_label = Label(root, text="نماد سهم", font=("Helvatica", 10))
+    stock_label.grid(row=3, column=1, pady=10)
+
+    global stock_entry
+    stock_entry = Entry(root)
+    stock_entry.grid(row=3, column=2, padx=70)
+
+    stock_price_label = Label(root, text="قیمت سهم", font=("Helvatica", 10))
+    stock_price_label.grid(row=4, column=1, pady=10)
+
+    global stock_price_entry
+    stock_price_entry = Entry(root)
+    stock_price_entry.grid(row=4, column=2, padx=70)
+
+    stock_quantity_label = Label(root, text="تعداد", font=("Helvatica", 10))
+    stock_quantity_label.grid(row=5, column=1, pady=10)
+
+    global stock_quantity_entry
+    stock_quantity_entry = Entry(root)
+    stock_quantity_entry.grid(row=5, column=2, padx=70)
+
+    guid = Label(root, text="زمان را به صورت 23:23 وارد کنید", font=("Helvatica", 10, 'bold'), fg="red")
+    guid.grid(row=6, column=1)
+
+    start_time_label = Label(root, text="ساعت شروع", font=("Helvatica", 10))
+    start_time_label.grid(row=7, column=1, pady=10)
+
+    global start_time_entry
+    start_time_entry = Entry(root)
+    start_time_entry.grid(row=7, column=2, padx=70)
+
+    end_time_label = Label(root, text="ساعت پایان", font=("Helvatica", 10))
+    end_time_label.grid(row=8, column=1, pady=10)
+
+    global end_time_entry
+    end_time_entry = Entry(root)
+    end_time_entry.grid(row=8, column=2, padx=70)
+
+    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=buy)
+    buy_btn.grid(row=9, column=1)
+
+    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=sell)
+    sell_btn.grid(row=9, column=2)
+
+    root.mainloop()
+
+
+# This function checks that our current time is in the our start time and our end time
 def time(start, end, current):
     if (current >= start) and (current <= end):
         return True
     return False
-
-
-def waiting_dot():
-    n_points = 10
-    points_l = ['.' * i + ' ' * (n_points - i) + '\r' for i in range(n_points)]
-    count = 0
-    for points in cycle(points_l):
-        print(points, end='')
-        sleep(0.0000001)
-        count += 1
-        if count == 100:
-            break
 
 
 def log_in():  # Function which handles the log-in stuff
@@ -38,8 +126,10 @@ def log_in():  # Function which handles the log-in stuff
     driver.get('https://online.emofid.com/Login')
 
     window_before = driver.window_handles[0]
+
     # we need to go to other page to log-in so we need to click in another button
     driver.find_element_by_xpath('/html/body/div[2]/div[1]/div[1]/div/div').click()
+
     # waiting for the other page to load up
     sleep(1)
 
@@ -66,9 +156,8 @@ def log_in():  # Function which handles the log-in stuff
         # Passing through the junk pages
         sleep(4)
         driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
-    except NoSuchElementException as e:
+    except NoSuchElementException:
         logging.error("Captcha didn't entered")
-        print(e.msg)
         driver.quit()
         call()
 
@@ -79,33 +168,31 @@ def log_in():  # Function which handles the log-in stuff
 
 
 def stock_search():
-    stocks = ['ثامید1', 'شستا1']
-
-    count = 0
     try:
-        for stock in stocks:
-            _search = driver.find_element_by_xpath('//*[@id="stockAutocomplete-container-sendorder"]')
-            search_icon = _search.find_element_by_css_selector('#btnSearchStockAutoComplete > span')
-            if count > 0:
-                search_icon.click()
-                sleep(2)
+        # for loop use for sth else here
+        # pressing search icon to enter our stock's name
+        _search = driver.find_element_by_xpath('//*[@id="stockAutocomplete-container-sendorder"]')
+        search_icon = _search.find_element_by_css_selector('#btnSearchStockAutoComplete > span')
 
-            # search for stock
-            search = driver.find_element_by_xpath("//input[@placeholder='جستجوی سهم']")
-            if count == 0:
-                search.click()
+        search_icon.click()
+        sleep(2)
 
-            search.send_keys(stock)
-            sleep(1)
-            search.send_keys(Keys.ARROW_DOWN)
-            search.send_keys(Keys.RETURN)
+        # enter into our search field
+        search = driver.find_element_by_xpath("//input[@placeholder='جستجوی سهم']")
 
-            trade()
-            count += 1
+        search.send_keys(stock)
+        sleep(1)
+
+        # Choosing our stock from dropdown box
+        search.send_keys(Keys.ARROW_DOWN)
+        search.send_keys(Keys.RETURN)
+
+        trade()  # trade function
 
     except ElementNotInteractableException as e:
-        print(e.msg)
-        # driver.quit()
+        logging.info(e.msg)
+        driver.quit()
+        call()
 
 
 def trade():
@@ -117,21 +204,26 @@ def trade():
         sleep(1)
 
     sleep(3)
+
     # passing quantity
-    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(quantity)
+    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(stock_quantity)
     sleep(1)
+
     # passing price
-    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(price)
-    # sell or buy button
+    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
+
+    # sell or buy button ** which the path is the same **
     sleep(1)
     driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
 
+    # press the final button
     sleep(1)
     driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnCancel"]').click()
 
 
 def start_trading():
     global driver
+
     # In order to disable notification we use "webdriver.ChrimeOption" to pass the options we want to use
     chrome_options = webdriver.ChromeOptions()
     # disable chrome notification command
@@ -139,54 +231,38 @@ def start_trading():
     # passing the argument to our chrome driver
     chrome_options.add_experimental_option("prefs", prefs)
 
-    PATH = r"E:\IDMs\chromedriver.exe"  # path to webdriver location on PC
+    # path to web driver location on PC TODO:make it dynamic
+
+    PATH = r"E:\IDMs\chromedriver.exe"
     # starting driver
     driver = webdriver.Chrome(options=chrome_options, executable_path=PATH)
 
-    log_in()
-    stock_search()
+    log_in()  # Initializing the login function
+    stock_search()  # Initializing the stock search function
 
 
 def call():
-    global trade_type, quantity, price
-    trade_type = str(input(f"Do you want to sell or buy [s, b]? "))
-    buy_sell = "buy"
-    if trade_type == 's' or trade_type == 'S':
-        buy_sell = "sell"
-    quantity = int(input(f"How many you wanna {buy_sell}: "))
-    price = int(input("In what price: "))
+    # because in stock market price is from 10x
+    if int(stock_price) % 10 != 0:
+        messagebox.showerror("Your price should be from 10x please Enter again the price ...")
+        ui()
+    # we can't order buy under 5,000,000 RIALS
+    elif (int(stock_price) * int(stock_quantity) < 5000000) and (trade_type == "b"):
+        messagebox.showerror("You can't buy less than 5,000,000 ريال")
+        ui()
 
-    if price % 10 != 0:
-        print("Your price should be from 10x please Enter again the price ...")
-        call()
-    elif (price * quantity < 5000000) and (trade_type == "b"):
-        print("You can't buy less than 5,000,000 ريال")
-        call()
     else:
-
-        time_correct_format = True
-        while time_correct_format:
-            try:
-                # getting start time
-                start_time = dt.datetime.strptime(input("Enter your start time in HH:MM format: "), "%H:%M").strftime("%H:%M")
-                # getting end time
-                end_time = dt.datetime.strptime(input("Enter your end time in HH:MM format: "), "%H:%M").strftime("%H:%M")
-                time_correct_format = False
-            except ValueError:
-                print("You need to enter the time in correct format")
 
         # current time
         current_time = dt.datetime.now().time().strftime("%H:%M")
 
-        print("Bot is starting ")
-        waiting_dot()
-
-        # start threading for multiple users
+        # check if our current time is in the our start and end time
         if time(start_time, end_time, current_time):
             start_trading()
         else:
-            print("In your time period this action can't be done\nplease Specify other time period\n")
+            logging.error("Current time is NOT in time period")
 
 
 if __name__ == '__main__':
-    call()
+    # Calling the main function to start all the functions
+    ui()
