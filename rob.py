@@ -68,23 +68,32 @@ def stock_search():
     driver.find_element_by_xpath('//*[@id="intro-skip"]').click()
     sleep(1)
     driver.find_element_by_xpath('//*[@id="siteVersionContainer"]/div/div[1]/span[2]').click()
-
+    count = 0
     try:
         for stock in stocks:
+            _search = driver.find_element_by_xpath('//*[@id="stockAutocomplete-container-sendorder"]')
+            search_icon = _search.find_element_by_css_selector('#btnSearchStockAutoComplete > span')
+            if count > 0:
+                search_icon.click()
+                sleep(2)
 
             # search for stock
-            search = driver.find_element_by_id("//input[@placeholder='جستجوی سهم']")
-            search.click()
+            search = driver.find_element_by_xpath("//input[@placeholder='جستجوی سهم']")
+            if count == 0:
+                search.click()
+
             search.send_keys(stock)
             sleep(1)
             search.send_keys(Keys.ARROW_DOWN)
             search.send_keys(Keys.RETURN)
 
             trade()
+            count += 1
 
-    except ElementNotInteractableException:
-        stock_search()
+    except ElementNotInteractableException as e:
+        print(e.msg)
         # driver.quit()
+
 
 def trade():
     # website is automatically set to buy option so we just
