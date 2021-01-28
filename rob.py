@@ -1,16 +1,17 @@
 from selenium import webdriver
 from time import sleep
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import ElementNotInteractableException
+from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
 import datetime as dt
 from itertools import cycle
-import threading
+import logging
 
+logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 # TODO: make GUI
 # TODO: make usernames & passwords dynamic
-username = '0780885651'
-password = 'Hossein1374'
+username = ''
+password = ''
 
 
 def time(start, end, current):
@@ -54,16 +55,23 @@ def log_in():  # Function which handles the log-in stuff
     # Passing password
     driver.find_element_by_xpath('//*[@id="Password"]').send_keys(password)
 
-    sleep(5)   # CAPTCHA time delay TODO: find better time limit if exists one
+    try:
+        sleep(5)   # CAPTCHA time delay TODO: find better time limit if exists one
 
-    # clicking on log-in button
-    driver.find_element_by_xpath('//*[@id="submit_btn"]').click()
+        # clicking on log-in button
+        driver.find_element_by_xpath('//*[@id="submit_btn"]').click()
 
-    driver.switch_to.window(window_before)
+        driver.switch_to.window(window_before)
 
-    # Passing through the junk pages
-    sleep(4)
-    driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
+        # Passing through the junk pages
+        sleep(4)
+        driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
+    except NoSuchElementException as e:
+        logging.error("Captcha didn't entered")
+        print(e.msg)
+        driver.quit()
+        call()
+
     sleep(1)
     driver.find_element_by_xpath('//*[@id="intro-skip"]').click()
     sleep(1)
@@ -175,7 +183,7 @@ def call():
 
         # start threading for multiple users
         if time(start_time, end_time, current_time):
-            call()
+            start_trading()
         else:
             print("In your time period this action can't be done\nplease Specify other time period\n")
 
