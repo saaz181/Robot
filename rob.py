@@ -2,29 +2,33 @@ from selenium import webdriver
 from time import sleep
 from selenium.webdriver.common.keys import Keys
 from selenium.common.exceptions import ElementNotInteractableException
-from selenium.webdriver.common.action_chains import ActionChains
+import datetime as dt
+from itertools import cycle
+import threading
 
-PATH = r"E:\IDMs\chromedriver.exe"  # path to webdriver location on PC
 
+# TODO: make GUI
 # TODO: make usernames & passwords dynamic
 username = '0780885651'
 password = 'Hossein1374'
 
-trade_type = str(input(f"Do you want to sell or buy ? [s, b]? "))
-quantity = int(input(f"How much you wanna buy from : "))
-price = int(input(f"In what price of : "))
 
-# In order to disable notification we use "webdriver.ChrimeOption" to pass the options we want to use
-chrome_options = webdriver.ChromeOptions()
+def time(start, end, current):
+    if (current >= start) and (current <= end):
+        return True
+    return False
 
-# disable chrome notification command
-prefs = {"profile.default_content_setting_values.notifications": 2}
 
-# passing the argument to our chrome driver
-chrome_options.add_experimental_option("prefs", prefs)
-
-# starting driver
-driver = webdriver.Chrome(options=chrome_options, executable_path=PATH)
+def waiting_dot():
+    n_points = 10
+    points_l = ['.' * i + ' ' * (n_points - i) + '\r' for i in range(n_points)]
+    count = 0
+    for points in cycle(points_l):
+        print(points, end='')
+        sleep(0.0000001)
+        count += 1
+        if count == 100:
+            break
 
 
 def log_in():  # Function which handles the log-in stuff
@@ -57,10 +61,6 @@ def log_in():  # Function which handles the log-in stuff
 
     driver.switch_to.window(window_before)
 
-
-def stock_search():
-    stocks = ['ثامید1', 'شستا1']
-
     # Passing through the junk pages
     sleep(4)
     driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
@@ -68,6 +68,11 @@ def stock_search():
     driver.find_element_by_xpath('//*[@id="intro-skip"]').click()
     sleep(1)
     driver.find_element_by_xpath('//*[@id="siteVersionContainer"]/div/div[1]/span[2]').click()
+
+
+def stock_search():
+    stocks = ['ثامید1', 'شستا1']
+
     count = 0
     try:
         for stock in stocks:
@@ -117,14 +122,63 @@ def trade():
     driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnCancel"]').click()
 
 
-if __name__ == '__main__':
+def start_trading():
+    global driver
+    # In order to disable notification we use "webdriver.ChrimeOption" to pass the options we want to use
+    chrome_options = webdriver.ChromeOptions()
+    # disable chrome notification command
+    prefs = {"profile.default_content_setting_values.notifications": 2}
+    # passing the argument to our chrome driver
+    chrome_options.add_experimental_option("prefs", prefs)
+
+    PATH = r"E:\IDMs\chromedriver.exe"  # path to webdriver location on PC
+    # starting driver
+    driver = webdriver.Chrome(options=chrome_options, executable_path=PATH)
+
     log_in()
     stock_search()
 
 
+def call():
+    global trade_type, quantity, price
+    trade_type = str(input(f"Do you want to sell or buy [s, b]? "))
+    buy_sell = "buy"
+    if trade_type == 's' or trade_type == 'S':
+        buy_sell = "sell"
+    quantity = int(input(f"How many you wanna {buy_sell}: "))
+    price = int(input("In what price: "))
+
+    if price % 10 != 0:
+        print("Your price should be from 10x please Enter again the price ...")
+        call()
+    elif (price * quantity < 5000000) and (trade_type == "b"):
+        print("You can't buy less than 5,000,000 ريال")
+        call()
+    else:
+
+        time_correct_format = True
+        while time_correct_format:
+            try:
+                # getting start time
+                start_time = dt.datetime.strptime(input("Enter your start time in HH:MM format: "), "%H:%M").strftime("%H:%M")
+                # getting end time
+                end_time = dt.datetime.strptime(input("Enter your end time in HH:MM format: "), "%H:%M").strftime("%H:%M")
+                time_correct_format = False
+            except ValueError:
+                print("You need to enter the time in correct format")
+
+        # current time
+        current_time = dt.datetime.now().time().strftime("%H:%M")
+
+        print("Bot is starting ")
+        waiting_dot()
+
+        # start threading for multiple users
+        if time(start_time, end_time, current_time):
+            call()
+        else:
+            print("In your time period this action can't be done\nplease Specify other time period\n")
 
 
-
-
-
-
+if __name__ == '__main__':
+    call()
