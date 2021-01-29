@@ -17,7 +17,6 @@ ALGORITHM:
     3 - we must make sure that as the bot buys/sells the stock doesn't buy/sell it again
     
 """
-
 # Using logging module to see what error did we encountered
 logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -25,6 +24,7 @@ logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(
 def clear():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
+    cost_label.configure(text="0")
 
 
 def clear_all():
@@ -41,18 +41,27 @@ def buy():
     stock = stock_entry.get()
     stock_price = stock_price_entry.get()
     stock_quantity = stock_quantity_entry.get()
-    start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
-    end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
+    start_time = start_time_entry.get()
+    end_time = end_time_entry.get()
     trade_type = 'b'
 
-    if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
-        total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-        cost_label.configure(text="{:,}".format(total_price) + " ريال ")
+    if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
+            or end_time == '':
+        messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
-    buy_message = messagebox.askokcancel(title="Price Check", message="از خرید خود اطمینان دارید؟")
-    if buy_message == True:
-        clear_all()
-        call()
+    else:
+        start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
+        end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
+
+        if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
+            total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+            text = "{:,}".format(total_price) + " ريال "
+            cost_label.configure(text=text)
+
+        buy_message = messagebox.askokcancel(title="Price Check", message=f"از خرید خود به مبلغ {text} اطمینان دارید؟")
+        if buy_message == True:
+            clear_all()
+            call()
 
 
 def sell():
@@ -62,23 +71,33 @@ def sell():
     stock = stock_entry.get()
     stock_price = stock_price_entry.get()
     stock_quantity = stock_quantity_entry.get()
-    start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
-    end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
+    start_time = start_time_entry.get()
+    end_time = end_time_entry.get()
     trade_type = 's'
 
-    if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
-        total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-        cost_label.configure(text="{:,}".format(total_price) + " ريال ")
+    if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
+            or end_time == '':
+        messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
-    sell_message = messagebox.askokcancel(title="Price Check", message="از فروش خود اطمینان دارید؟")
-    if sell_message == True:
-        clear_all()
-        call()
+    else:
+        start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
+        end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
+
+        if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
+            total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+            text = "{:,}".format(total_price) + " ريال "
+            cost_label.configure(text=text)
+
+        sell_message = messagebox.askokcancel(title="Price Check", message=f"از فروش خود به مبلغ {text} اطمینان دارید؟")
+        if sell_message == True:
+            clear_all()
+            call()
 
 
 def ui():
     root = Tk()
     root.title("Stock Bot")
+    root.resizable(False, False)
     root.iconbitmap('bot.ico')
     root.geometry('400x400')
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
@@ -140,10 +159,10 @@ def ui():
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
     cost_label_text.grid(row=9, column=1)
 
-    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=buy)
-    buy_btn.grid(row=10, column=1)
+    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=buy, width=5)
+    buy_btn.grid(row=10, column=1, pady=10)
 
-    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=sell)
+    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=sell, width=5)
     sell_btn.grid(row=10, column=2)
 
     root.mainloop()
@@ -151,7 +170,9 @@ def ui():
 
 # This function checks that our current time is in the our start time and our end time
 def time(start, end, current):
-    if (current >= start.strftime("%H:%M")) and (current <= end.strftime("%H:%M")):
+    start = start.strftime("%H:%M")
+    end = end.strftime("%H:%M")
+    if (start >= current) and (current <= end) and (start < end):
         return True
     return False
 
@@ -236,6 +257,7 @@ def stock_search():
         call()
 
 
+# **** main function which do the trade ***
 def trade():
     # website is automatically set to buy option so we just
     # need to define sell option
@@ -253,14 +275,20 @@ def trade():
     # passing price
     driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
 
-    # sell or buy button ** which the path is the same **
-    sleep(1)
-    driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
+    length = (end_time - start_time).seconds
 
-    # press the final button
-    sleep(1)
-    driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnCancel"]').click()
+    sleep(length)
+    for _ in range(length):
+        # sell or buy button ** which the path is the same **
+        sleep(0.3)
+        driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
 
+        # press the final button
+        sleep(0.3)
+        driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnCancel"]').click()
+        if dt.datetime.now().time().strftime("%H:%M") == end_time:
+            break
+    messagebox.showinfo(title="success", message="Trade completed")
 
 def start_trading():
     global driver
