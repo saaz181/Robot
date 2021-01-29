@@ -22,6 +22,18 @@ ALGORITHM:
 logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+def clear():
+    stock_price_entry.delete(0, END)
+    stock_quantity_entry.delete(0, END)
+
+
+def clear_all():
+    stock_price_entry.delete(0, END)
+    stock_quantity_entry.delete(0, END)
+    start_time_entry.delete(0, END)
+    end_time_entry.delete(0, END)
+
+
 def buy():
     global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
     username = user_entry.get()
@@ -29,10 +41,18 @@ def buy():
     stock = stock_entry.get()
     stock_price = stock_price_entry.get()
     stock_quantity = stock_quantity_entry.get()
-    start_time = start_time_entry.get()
-    end_time = end_time_entry.get()
+    start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
+    end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
     trade_type = 'b'
-    call()
+
+    if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
+        total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+        cost_label.configure(text="{:,}".format(total_price) + " ريال ")
+
+    buy_message = messagebox.askokcancel(title="Price Check", message="از خرید خود اطمینان دارید؟")
+    if buy_message == True:
+        clear_all()
+        call()
 
 
 def sell():
@@ -42,15 +62,24 @@ def sell():
     stock = stock_entry.get()
     stock_price = stock_price_entry.get()
     stock_quantity = stock_quantity_entry.get()
-    start_time = start_time_entry.get()
-    end_time = end_time_entry.get()
+    start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
+    end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
     trade_type = 's'
-    call()
+
+    if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
+        total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+        cost_label.configure(text="{:,}".format(total_price) + " ريال ")
+
+    sell_message = messagebox.askokcancel(title="Price Check", message="از فروش خود اطمینان دارید؟")
+    if sell_message == True:
+        clear_all()
+        call()
 
 
 def ui():
     root = Tk()
     root.title("Stock Bot")
+    root.iconbitmap('bot.ico')
     root.geometry('400x400')
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
@@ -73,7 +102,7 @@ def ui():
     stock_entry = Entry(root)
     stock_entry.grid(row=3, column=2, padx=70)
 
-    stock_price_label = Label(root, text="قیمت سهم", font=("Helvatica", 10))
+    stock_price_label = Label(root, text="قیمت سهم (ريال)", font=("Helvatica", 10))
     stock_price_label.grid(row=4, column=1, pady=10)
 
     global stock_price_entry
@@ -104,18 +133,25 @@ def ui():
     end_time_entry = Entry(root)
     end_time_entry.grid(row=8, column=2, padx=70)
 
+    global cost_label
+    cost_label = Label(root, text="0")
+    cost_label.grid(row=9, column=2)
+
+    cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
+    cost_label_text.grid(row=9, column=1)
+
     buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=buy)
-    buy_btn.grid(row=9, column=1)
+    buy_btn.grid(row=10, column=1)
 
     sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=sell)
-    sell_btn.grid(row=9, column=2)
+    sell_btn.grid(row=10, column=2)
 
     root.mainloop()
 
 
 # This function checks that our current time is in the our start time and our end time
 def time(start, end, current):
-    if (current >= start) and (current <= end):
+    if (current >= start.strftime("%H:%M")) and (current <= end.strftime("%H:%M")):
         return True
     return False
 
@@ -139,32 +175,37 @@ def log_in():  # Function which handles the log-in stuff
     # switching to page page
     driver.switch_to.window(window_after)
 
-    # Passing username
-    driver.find_element_by_xpath('//*[@id="Username"]').send_keys(username)
-    sleep(1)
-    # Passing password
-    driver.find_element_by_xpath('//*[@id="Password"]').send_keys(password)
-
     try:
+        # Passing username
+        driver.find_element_by_xpath('//*[@id="Username"]').send_keys(username)
+        sleep(1)
+        # Passing password
+        driver.find_element_by_xpath('//*[@id="Password"]').send_keys(password)
+
+
         sleep(5)   # CAPTCHA time delay TODO: find better time limit if exists one
 
         # clicking on log-in button
         driver.find_element_by_xpath('//*[@id="submit_btn"]').click()
 
         driver.switch_to.window(window_before)
-
-        # Passing through the junk pages
         sleep(4)
-        driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
+
     except NoSuchElementException:
         logging.error("Captcha didn't entered")
         driver.quit()
         call()
-
-    sleep(1)
-    driver.find_element_by_xpath('//*[@id="intro-skip"]').click()
-    sleep(1)
-    driver.find_element_by_xpath('//*[@id="siteVersionContainer"]/div/div[1]/span[2]').click()
+    try:
+        # Passing through the junk pages
+        driver.find_element_by_xpath('//*[@id="intro-mask"]/div[1]/div[13]').click()
+        sleep(1)
+        driver.find_element_by_xpath('//*[@id="intro-skip"]').click()
+        sleep(1)
+        driver.find_element_by_xpath('//*[@id="siteVersionContainer"]/div/div[1]/span[2]').click()
+    except ElementNotInteractableException:
+        logging.info("Slow Internet Connection -> couldn't load the main page")
+        driver.quit()
+        call()
 
 
 def stock_search():
@@ -244,12 +285,14 @@ def start_trading():
 def call():
     # because in stock market price is from 10x
     if int(stock_price) % 10 != 0:
-        messagebox.showerror("Your price should be from 10x please Enter again the price ...")
-        ui()
+        messagebox.showerror(title="Price Error",
+                             message="Your price should be from 10x please Enter again the price ...")
+        clear()
     # we can't order buy under 5,000,000 RIALS
     elif (int(stock_price) * int(stock_quantity) < 5000000) and (trade_type == "b"):
-        messagebox.showerror("You can't buy less than 5,000,000 ريال")
-        ui()
+        messagebox.showerror(title="Underprice",
+                             message="You can't buy less than 5,000,000 ريال")
+        clear()
 
     else:
 
@@ -258,8 +301,11 @@ def call():
 
         # check if our current time is in the our start and end time
         if time(start_time, end_time, current_time):
+            print("Bot started ... ")
             start_trading()
         else:
+            messagebox.showerror(title="TIME Error",
+                                 message="Please Enter the time correctly")
             logging.error("Current time is NOT in time period")
 
 
