@@ -50,13 +50,23 @@ def buy():
         messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
     else:
-        start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
-        end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
 
-        if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
-            total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-            text = "{:,}".format(total_price) + " ريال "
-            cost_label.configure(text=text)
+        try:
+            start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M")
+            end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M")
+            time_bool = True
+        except ValueError:
+            time_bool = False
+            messagebox.showerror(title="Time Format",
+                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت\n 01:23 وارد کنید")
+
+        try:
+            if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0 and time_bool:
+                total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+                text = "{:,}".format(total_price) + " ريال "
+                cost_label.configure(text=text)
+        except ValueError:
+            messagebox.showerror(title="Number Failure", message="لطفا قیمت و تعداد را با عدد وارد کنید")
 
         buy_message = messagebox.askokcancel(title="Price Check", message=f"از خرید خود به مبلغ {text} اطمینان دارید؟")
         if buy_message == True:
