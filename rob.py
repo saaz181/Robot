@@ -337,7 +337,7 @@ def robot_trade():
     # time to wait until time occurs
     length_wait = (start_time - now_time.__str__()).seconds
 
-    sleep(length_wait - 2)
+    sleep(length_wait - 3)
     for _ in range(length):
         try:
             # sell or buy button ** which the path is the same **
