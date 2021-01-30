@@ -24,7 +24,7 @@ ALGORITHM:
 """
 
 
-# For .exe file
+# For .exe file "PyInstaller" module
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
@@ -35,87 +35,109 @@ def resource_path(relative_path):
 logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 
+# Clear price, quantity and total price
 def clear():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
     cost_label.configure(text="0")
 
 
+# Clear price & quantity
 def clear_all():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
 
 
+# our buy button "green one"
 def buy():
     global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
-    username = user_entry.get()
-    password = password_entry.get()
-    stock = stock_entry.get()
-    stock_price = stock_price_entry.get()
-    stock_quantity = stock_quantity_entry.get()
-    start_time = start_time_entry.get()
-    end_time = end_time_entry.get()
-    trade_type = 'b'
+    username = user_entry.get()  # username entry field string
+    password = password_entry.get()  # password entry field string
+    stock = stock_entry.get()  # stock entry field "don't need to change language" string
+    stock_price = stock_price_entry.get()  # price of a stock entry field string
+    stock_quantity = stock_quantity_entry.get()  # quantity of a stock entry field string
+    start_time = start_time_entry.get()  # what time to start entry field string
+    end_time = end_time_entry.get()  # what time to finish entry field string
+    trade_type = 'b'  # specifying the type of our trade which is BUY
 
     if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
             or end_time == '':
         messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
     else:
-
+        # time_bool is for checking if they enter time correctly
         try:
-            start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")
-            end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")
+            start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")  # parse into datetime format
+            end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")  # parse into datetime format
             time_bool = True
+
         except ValueError:
             time_bool = False
             messagebox.showerror(title="Time Format",
-                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت\n 01:23 وارد کنید")
+                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت درست وارد کنید")
 
         try:
             if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0 and time_bool:
                 total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
                 text = "{:,}".format(total_price) + " ريال "
                 cost_label.configure(text=text)
+
         except ValueError:
             messagebox.showerror(title="Number Failure", message="لطفا قیمت و تعداد را با عدد وارد کنید")
 
         buy_message = messagebox.askokcancel(title="Price Check", message=f"از خرید خود به مبلغ {text} اطمینان دارید؟")
-        if buy_message == True:
+        if buy_message == True:  # check for our messagebox value
             clear_all()
+            # running bot separately from our GUI
             threading.Thread(target=call).start()
 
 
+# sell button "red one"
 def sell():
     global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
-    username = user_entry.get()
-    password = password_entry.get()
-    stock = stock_entry.get()
-    stock_price = stock_price_entry.get()
-    stock_quantity = stock_quantity_entry.get()
-    start_time = start_time_entry.get()
-    end_time = end_time_entry.get()
-    trade_type = 's'
+    username = user_entry.get()  # username entry field string
+    password = password_entry.get()  # password entry field string
+    stock = stock_entry.get()  # stock entry field "don't need to change language" string
+    stock_price = stock_price_entry.get()  # price of a stock entry field string
+    stock_quantity = stock_quantity_entry.get()  # quantity of a stock entry field string
+    start_time = start_time_entry.get()  # what time to start entry field string
+    end_time = end_time_entry.get()  # what time to finish entry field string
+    trade_type = 's'  # specifying the type of our trade which is SELL
 
+    # checking for empty fields
     if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
             or end_time == '':
         messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
     else:
-        start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")
-        end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")
+        # time_bool is for checking if they enter time correctly
+        try:
+            start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")  # parse into datetime format
+            end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")  # parse into datetime format
+            time_bool = True
 
-        if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0:
-            total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-            text = "{:,}".format(total_price) + " ريال "
-            cost_label.configure(text=text)
+        except ValueError:
+            time_bool = False
+            messagebox.showerror(title="Time Format",
+                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت درست وارد کنید")
+
+        try:
+            if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0 and time_bool:
+                total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+                text = "{:,}".format(total_price) + " ريال "
+                cost_label.configure(text=text)
+
+        except ValueError:
+            messagebox.showerror(title="Number Failure", message="لطفا قیمت و تعداد را با عدد وارد کنید")
 
         sell_message = messagebox.askokcancel(title="Price Check", message=f"از فروش خود به مبلغ {text} اطمینان دارید؟")
-        if sell_message == True:
+        if sell_message == True:  # check for our messagebox value
             clear_all()
+            # running bot separately from our GUI
             threading.Thread(target=call).start()
 
 
+# our GUI function which runs separately from TRADEs functions
 def ui():
     root = Tk()
     root.title("Stock Bot")
@@ -247,22 +269,20 @@ def log_in():  # Function which handles the log-in stuff
         sleep(0.5)
         driver.find_element_by_xpath('//*[@id="siteVersionContainer"]/div/div[1]/span[2]').click()
 
-    except ElementNotInteractableException:
+    except ElementNotInteractableException:  # if there is slow internet connection, this error will occur
         logging.info("Slow Internet Connection -> couldn't load the main page")
         driver.quit()
         call()
 
-    except NoSuchElementException:
+    except NoSuchElementException:  # if captcha doesn't enter, this exception will occur
         logging.info("Wrong Password or username")
         driver.quit()
-        messagebox.showwarning(title="CAPTCHA", message="Please enter the CAPTCHA next time")
-        # length -= 12
+        messagebox.showwarning(title="CAPTCHA", message="لطفا کد کپچا را وارد کنید!")
         call()
 
 
 def stock_search():
     try:
-        # for loop use for sth else here
         # pressing search icon to enter our stock's name
         _search = driver.find_element_by_xpath('//*[@id="stockAutocomplete-container-sendorder"]')
         search_icon = _search.find_element_by_css_selector('#btnSearchStockAutoComplete > span')
@@ -289,8 +309,7 @@ def stock_search():
 
 
 def trade():
-    # website is automatically set to buy option so we just
-    # need to define sell option
+    # website is automatically set to buy option so we just need to define sell option
     sell = driver.find_element_by_xpath('//*[@id="sendorder-container"]/div[1]/div[2]/div')
     if trade_type == 's':
         sell.click()
@@ -305,6 +324,7 @@ def trade():
     # passing price
     driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
 
+    # Calling the main function of our program 'robot_trade'
     robot_trade()
 
 
@@ -329,6 +349,7 @@ def robot_trade():
 
     driver.quit()
     messagebox.showinfo(title="success", message="Trade completed")
+# *** end of our main function of program ***
 
 
 def start_trading():
@@ -340,11 +361,9 @@ def start_trading():
     prefs = {"profile.default_content_setting_values.notifications": 2}
     # passing the argument to our chrome driver
     chrome_options.add_experimental_option("prefs", prefs)
-    chrome_options.add_argument('--ignore-certificate-errors')
-    chrome_options.add_argument('--allow-insecure-localhost')
-    chrome_options.add_argument('--ignore-ssl-errors=yes')
-
-    # path to web driver location on PC TODO:make it dynamic
+    chrome_options.add_argument('--ignore-certificate-errors')  # disable chrome security alerts
+    chrome_options.add_argument('--allow-insecure-localhost')  # allow 'chromedriver' to run on localhost
+    chrome_options.add_argument('--ignore-ssl-errors=yes')  # disable SSL security of chrome browser
 
     PATH = resource_path("chromedriver.exe")
     # starting driver
@@ -380,5 +399,5 @@ def call():
 
 
 if __name__ == '__main__':
-    # Calling the main function to start all the functions
+    # Calling the GUI function to start all the functions
     ui()
