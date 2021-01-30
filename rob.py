@@ -1,7 +1,7 @@
 from selenium import webdriver
 from time import sleep
 from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException
+from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException, NoSuchWindowException
 import datetime as dt
 import logging
 from tkinter import *
@@ -331,7 +331,7 @@ def trade():
 # **** main function which do the trade ***
 def robot_trade():
     # How many times to click on buy/sell button
-    length = (end_time - start_time).seconds
+    length = (end_time - start_time).seconds + 10
 
     now_time = Time()
     # time to wait until time occurs
@@ -339,13 +339,17 @@ def robot_trade():
 
     sleep(length_wait - 2)
     for _ in range(length):
-        # sell or buy button ** which the path is the same **
-        sleep(0.3)
-        driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
+        try:
+            # sell or buy button ** which the path is the same **
+            sleep(0.3)
+            driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
 
-        # press the final button
-        sleep(0.3)
-        driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnSendOrder"]').click()
+            # press the final button
+            sleep(0.3)
+            driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnSendOrder"]').click()
+
+        except NoSuchWindowException:  # if user closed the window manually
+            messagebox.showinfo(title="Window Closed Manually", message="مرورگر توسط کاربر بسته شد")
 
     driver.quit()
     messagebox.showinfo(title="success", message="Trade completed")
@@ -385,6 +389,7 @@ def call():
         messagebox.showerror(title="Underprice", message="You can't buy less than 5,000,000 ريال")
         clear()
     else:
+
         # current time
         current_time = Time().__str__().strftime("%H:%M:%S")
 

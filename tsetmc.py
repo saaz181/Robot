@@ -19,4 +19,5 @@ class Time(object):
     def __str__(self):
         clock = self.driver.find_element_by_class_name('RealServerTime')
         self.current_time = dt.datetime.strptime(clock.text, "%H:%M:%S")
+        self.driver.quit()
         return self.current_time
