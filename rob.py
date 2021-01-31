@@ -9,7 +9,6 @@ from tkinter import messagebox
 import sys
 import os
 import threading
-from tsetmc import Time
 
 """
 This program can be initial multiple bots together but if only we open new program for it
@@ -317,42 +316,63 @@ def trade():
 
     sleep(3)
 
-    # passing quantity
-    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(stock_quantity)
-    sleep(1)
-
-    # passing price
-    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
-
-    # Calling the main function of our program 'robot_trade'
-    robot_trade()
-
-
-# **** main function which do the trade ***
-def robot_trade():
     # How many times to click on buy/sell button
     length = (end_time - start_time).seconds + 10
 
-    now_time = Time()
+    now_time = driver.find_element_by_xpath(
+        '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
+    current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S")
+
     # time to wait until time occurs
-    length_wait = (start_time - now_time.__str__()).seconds
+    length_wait = (start_time - current_time).seconds
 
-    sleep(length_wait - 3)
-    for _ in range(length):
+    sleep(length_wait - 5)
+
+    # Calling the main function of our program 'robot_trade'
+    robot_trade(length)
+
+
+# **** main function which do the trade ***
+def robot_trade(trade_time):
+    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').clear()
+    sleep(0.4)
+
+    # passing price
+    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').clear()
+    sleep(0.4)
+    for _ in range(trade_time):
         try:
-            # sell or buy button ** which the path is the same **
-            sleep(0.3)
-            driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
+            # passing quantity
+            driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(stock_quantity)
+            sleep(0.5)
 
-            # press the final button
-            sleep(0.3)
-            driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnSendOrder"]').click()
+            # passing price
+            driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
+            sleep(0.4)
+
+            try:
+                # sell or buy button ** which the path is the same **
+                sleep(0.2)
+                driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
+
+                # press the final button
+                sleep(0.2)
+                driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnSendOrder"]').click()
+            except:
+                now_time = driver.find_element_by_xpath(
+                    '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/'
+                    'widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
+                
+                current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S")
+                length = (end_time - current_time).seconds
+                robot_trade(length)
 
         except NoSuchWindowException:  # if user closed the window manually
-            messagebox.showinfo(title="Window Closed Manually", message="مرورگر توسط کاربر بسته شد")
+            messagebox.showerror(title="Window Closed", message="کاربر از مرور گر خارج شد")
 
     driver.quit()
     messagebox.showinfo(title="success", message="Trade completed")
+
 # *** end of our main function of program ***
 
 
@@ -391,17 +411,11 @@ def call():
     else:
 
         # current time
-        current_time = Time().__str__().strftime("%H:%M:%S")
+        current_time = dt.datetime.now().time().strftime("%H:%M:%S")
 
         # check if our current time is in the our start and end time
         if time(start_time, end_time, current_time):
-            print("Bot started ... ")
             start_trading()
-        else:
-            messagebox.showerror(title="TIME Error",
-                                 message="Please Enter the time correctly")
-            logging.error("Current time is NOT in time period")
-
 
 if __name__ == '__main__':
     # Calling the GUI function to start all the functions
