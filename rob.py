@@ -19,6 +19,7 @@ ALGORITHM:
     1 - start buying/selling from start time to the end time
     2 - when we bought/sold the stock the bot should break out or goto other stock
     3 - we must make sure that as the bot buys/sells the stock doesn't buy/sell it again
+        (which in this program isn't necessary)
     
 """
 
@@ -29,9 +30,8 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
-
 # Using logging module to see what error did we encountered
-logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='robot.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # Clear price, quantity and total price
@@ -48,7 +48,7 @@ def clear_all():
 
 
 # our buy button "green one"
-def buy():
+def order(type):
     global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
     username = user_entry.get()  # username entry field string
     password = password_entry.get()  # password entry field string
@@ -57,14 +57,20 @@ def buy():
     stock_quantity = stock_quantity_entry.get()  # quantity of a stock entry field string
     start_time = start_time_entry.get()  # what time to start entry field string
     end_time = end_time_entry.get()  # what time to finish entry field string
-    trade_type = 'b'  # specifying the type of our trade which is BUY
+    trade_type = type  # specifying the type of our trade which is BUY
 
-    if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
-            or end_time == '':
+    type_value = {"s": 'فروش', "b": "خرید"}
+
+    if username == '' or password == '' or stock == '' or stock_price == ''\
+            or stock_quantity == '' or start_time == '' or end_time == '':
+
         messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
 
     else:
-        # time_bool is for checking if they enter time correctly
+        # time_bool variable is for checking if they enter time correctly
+        # proceed variable is for not encounter the last message box
+        proceed = True
+
         try:
             start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")  # parse into datetime format
             end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")  # parse into datetime format
@@ -72,68 +78,42 @@ def buy():
 
         except ValueError:
             time_bool = False
+            proceed = False
             messagebox.showerror(title="Time Format",
-                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت درست وارد کنید")
+                                 message="لطفا زمان را به صورت 12 ساعته وارد کنید و به فرمت درست وارد کنید")
 
+        text = ""
         try:
-            if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0 and time_bool:
-                total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-                text = "{:,}".format(total_price) + " ريال "
-                cost_label.configure(text=text)
+            if time_bool:
+                if stock_price != '' and stock_quantity != '':
+                    total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
+                    text = "{:,}".format(total_price) + " ريال "
+                    cost_label.configure(text=text)
+
+                if int(stock_price) % 10 != 0:
+                    pass_ten_base = messagebox.askyesno(title="Price Error",
+                                                        message="قیمت باید مضربی از 10 باشد میخواهید ادامه دهید")
+                    if pass_ten_base:
+                            proceed = True
+
+                # we can't order buy under 5,000,000 RIALS
+                if (trade_type == "b"):
+                    if (int(stock_price) * int(stock_quantity) < 5000000):
+                        messagebox.showerror(title="Underprice", message="خرید کمتر از 5,000,000 ريال ممکن نیست")
+                        clear()
+                        proceed = False
 
         except ValueError:
             messagebox.showerror(title="Number Failure", message="لطفا قیمت و تعداد را با عدد وارد کنید")
+            proceed = False
 
-        buy_message = messagebox.askokcancel(title="Price Check", message=f"از خرید خود به مبلغ {text} اطمینان دارید؟")
-        if buy_message == True:  # check for our messagebox value
-            clear_all()
-            # running bot separately from our GUI
-            threading.Thread(target=call).start()
-
-
-# sell button "red one"
-def sell():
-    global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
-    username = user_entry.get()  # username entry field string
-    password = password_entry.get()  # password entry field string
-    stock = stock_entry.get()  # stock entry field "don't need to change language" string
-    stock_price = stock_price_entry.get()  # price of a stock entry field string
-    stock_quantity = stock_quantity_entry.get()  # quantity of a stock entry field string
-    start_time = start_time_entry.get()  # what time to start entry field string
-    end_time = end_time_entry.get()  # what time to finish entry field string
-    trade_type = 's'  # specifying the type of our trade which is SELL
-
-    # checking for empty fields
-    if username == '' or password == '' or stock == '' or stock_price == '' or stock_quantity == '' or start_time == '' \
-            or end_time == '':
-        messagebox.showerror(title="Empty form field", message="لطقا همه فیلد هارا پر کنید")
-
-    else:
-        # time_bool is for checking if they enter time correctly
-        try:
-            start_time = dt.datetime.strptime(start_time_entry.get(), "%H:%M:%S")  # parse into datetime format
-            end_time = dt.datetime.strptime(end_time_entry.get(), "%H:%M:%S")  # parse into datetime format
-            time_bool = True
-
-        except ValueError:
-            time_bool = False
-            messagebox.showerror(title="Time Format",
-                                 message="لطفا زمان را به صورت 24 ساعت وارد کنید و به فرمت درست وارد کنید")
-
-        try:
-            if stock_price != '' and stock_quantity != '' and int(stock_price) % 10 == 0 and time_bool:
-                total_price = int(stock_price_entry.get()) * int(stock_quantity_entry.get())
-                text = "{:,}".format(total_price) + " ريال "
-                cost_label.configure(text=text)
-
-        except ValueError:
-            messagebox.showerror(title="Number Failure", message="لطفا قیمت و تعداد را با عدد وارد کنید")
-
-        sell_message = messagebox.askokcancel(title="Price Check", message=f"از فروش خود به مبلغ {text} اطمینان دارید؟")
-        if sell_message == True:  # check for our messagebox value
-            clear_all()
-            # running bot separately from our GUI
-            threading.Thread(target=call).start()
+        if proceed:
+            trade_message = messagebox.askokcancel(title="Price Check",
+                                                   message=f"از {type_value[type]} خود به مبلغ {text} اطمینان دارید؟")
+            if trade_message:  # check for our messagebox value
+                clear_all()
+                # running bot separately from our GUI
+                threading.Thread(target=start_trading).start()
 
 
 # our GUI function which runs separately from TRADEs functions
@@ -178,7 +158,7 @@ def ui():
     stock_quantity_entry = Entry(root)
     stock_quantity_entry.grid(row=5, column=2, padx=70)
 
-    guid = Label(root, text="زمان را به صورت 23:23:23 وارد کنید", font=("Helvatica", 10, 'bold'), fg="red")
+    guid = Label(root, text="زمان را به صورت 01:10:03 وارد کنید", font=("Helvatica", 10, 'bold'), fg="red")
     guid.grid(row=6, column=1)
 
     start_time_label = Label(root, text="ساعت شروع", font=("Helvatica", 10))
@@ -202,22 +182,13 @@ def ui():
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
     cost_label_text.grid(row=9, column=1)
 
-    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=buy, width=5)
+    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('b'), width=5)
     buy_btn.grid(row=10, column=1, pady=10)
 
-    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=sell, width=5)
+    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
     sell_btn.grid(row=10, column=2)
 
     root.mainloop()
-
-
-# This function checks that our current time is in the our start time and our end time
-def time(start, end, current):
-    start = start.strftime("%H:%M:%S")
-    end = end.strftime("%H:%M:%S")
-    if (start >= current) and (current <= end) and (start < end):
-        return True
-    return False
 
 
 def log_in():  # Function which handles the log-in stuff
@@ -258,7 +229,7 @@ def log_in():  # Function which handles the log-in stuff
     except NoSuchElementException:
         logging.error("Captcha didn't entered")
         driver.quit()
-        call()
+        start_trading()
 
     try:
         # Passing through the junk pages
@@ -271,13 +242,13 @@ def log_in():  # Function which handles the log-in stuff
     except ElementNotInteractableException:  # if there is slow internet connection, this error will occur
         logging.info("Slow Internet Connection -> couldn't load the main page")
         driver.quit()
-        call()
+        start_trading()
 
     except NoSuchElementException:  # if captcha doesn't enter, this exception will occur
         logging.info("Wrong Password or username")
         driver.quit()
         messagebox.showwarning(title="CAPTCHA", message="لطفا کد کپچا را وارد کنید!")
-        call()
+        start_trading()
 
 
 def stock_search():
@@ -304,7 +275,7 @@ def stock_search():
     except ElementNotInteractableException as e:
         logging.info(e.msg)
         driver.quit()
-        call()
+        start_trading()
 
 
 def trade():
@@ -319,13 +290,22 @@ def trade():
     # How many times to click on buy/sell button
     length = (end_time - start_time).seconds + 10
 
+    # Getting time from website we crawling
     now_time = driver.find_element_by_xpath(
-        '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
-    current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S")
+        '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/'
+        'div/div/widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
+
+    # Convert into 12h clock
+    current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S").strftime("%I:%M:%S")
 
     # time to wait until time occurs
-    length_wait = (start_time - current_time).seconds
+    length_wait = (start_time - dt.datetime.strptime(current_time, "%H:%M:%S")).seconds
 
+    # passing quantity
+    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(stock_quantity)
+    sleep(1)
+    # passing price
+    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
     sleep(length_wait - 5)
 
     # Calling the main function of our program 'robot_trade'
@@ -334,43 +314,28 @@ def trade():
 
 # **** main function which do the trade ***
 def robot_trade(trade_time):
-    driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').clear()
-    sleep(0.4)
 
-    # passing price
-    driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').clear()
-    sleep(0.4)
-    for _ in range(trade_time):
+    _quit = True
+    for _ in range(trade_time * 4):
         try:
-            # passing quantity
-            driver.find_element_by_xpath('//*[@id="send_order_txtCount"]').send_keys(stock_quantity)
-            sleep(0.5)
+            sleep(0.3)
+            # sell or buy button ** which the path is the same **
+            driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
 
-            # passing price
-            driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
-            sleep(0.4)
-
-            try:
-                # sell or buy button ** which the path is the same **
-                sleep(0.2)
-                driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
-
-                # press the final button
-                sleep(0.2)
-                driver.find_element_by_xpath('//*[@id="sendorder_ModalConfirm_btnSendOrder"]').click()
-            except:
+        except:
+                # Getting time from website we crawling
                 now_time = driver.find_element_by_xpath(
                     '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/'
                     'widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
-                
-                current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S")
-                length = (end_time - current_time).seconds
+
+                # Convert into 12h clock
+                current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S").strftime("%I:%M:%S")
+
+                length = (end_time - dt.datetime.strptime(current_time, "%H:%M:%S")).seconds
                 robot_trade(length)
 
-        except NoSuchWindowException:  # if user closed the window manually
-            messagebox.showerror(title="Window Closed", message="کاربر از مرور گر خارج شد")
-
-    driver.quit()
+    if _quit:
+        driver.quit()
     messagebox.showinfo(title="success", message="Trade completed")
 
 # *** end of our main function of program ***
@@ -396,26 +361,6 @@ def start_trading():
     log_in()  # Initializing the login function
     stock_search()  # Initializing the stock search function
 
-
-# call the trade function
-def call():
-    # because in stock market price is from 10x
-    if int(stock_price) % 10 != 0:
-        messagebox.showerror(title="Price Error",
-                             message="Your price should be from 10x please Enter again the price ...")
-        clear()
-    # we can't order buy under 5,000,000 RIALS
-    elif (int(stock_price) * int(stock_quantity) < 5000000) and (trade_type == "b"):
-        messagebox.showerror(title="Underprice", message="You can't buy less than 5,000,000 ريال")
-        clear()
-    else:
-
-        # current time
-        current_time = dt.datetime.now().time().strftime("%H:%M:%S")
-
-        # check if our current time is in the our start and end time
-        if time(start_time, end_time, current_time):
-            start_trading()
 
 if __name__ == '__main__':
     # Calling the GUI function to start all the functions
