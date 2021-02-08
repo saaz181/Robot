@@ -31,7 +31,7 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 # Using logging module to see what error did we encountered
-logging.basicConfig(filename='robot.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
 
 
 # Clear price, quantity and total price
@@ -306,6 +306,7 @@ def trade():
     sleep(1)
     # passing price
     driver.find_element_by_xpath('//*[@id="send_order_txtPrice"]').send_keys(stock_price)
+    
     sleep(length_wait - 5)
 
     # Calling the main function of our program 'robot_trade'
@@ -316,11 +317,21 @@ def trade():
 def robot_trade(trade_time):
 
     _quit = True
+    # sell or buy button
+    order_btn = driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]')
     for _ in range(trade_time * 4):
         try:
-            sleep(0.3)
+            sleep(0.334)  # delay time between each order
             # sell or buy button ** which the path is the same **
-            driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]').click()
+            order_btn.click()
+
+        except AttributeError:
+            messagebox.showinfo(title="Window closed", message="مرورگر توسط کاربر بسته شد")
+            _quit = False
+
+        except NoSuchWindowException:
+            messagebox.showinfo(title="Window closed", message="مرورگر توسط کاربر بسته شد")
+            _quit = False
 
         except:
                 # Getting time from website we crawling
