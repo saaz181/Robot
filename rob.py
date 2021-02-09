@@ -6,9 +6,11 @@ import datetime as dt
 import logging
 from tkinter import *
 from tkinter import messagebox
+from tkinter import ttk
 import sys
 import os
 import threading
+from data import StockData
 
 """
 This program can be initial multiple bots together but if only we open new program for it
@@ -117,6 +119,16 @@ def order(type):
                 # running bot separately from our GUI
                 threading.Thread(target=start_trading).start()
 
+def stock_window():
+    pass
+
+STOCKS = []
+
+def short_form():
+    pass
+
+def save_info():
+    pass
 
 # our GUI function which runs separately from TRADEs functions
 def ui():
@@ -124,13 +136,18 @@ def ui():
     root.title("Stock Bot")
     root.resizable(False, False)
     root.iconbitmap(resource_path('bot.ico'))
-    root.geometry('400x450')
+    root.geometry('440x450')
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
 
     global user_entry
-    user_entry = Entry(root)
-    user_entry.grid(row=1, column=2)
+    user_entry = StringVar()
+
+    username_combo = ttk.Combobox(root, width=17, textvariable=user_entry, values=[], height=10)
+    username_combo.grid(row=0, column=1)
+    # username_combo.current(0)
+    # username_combo.bind("<<ComboboxSelected>>", save_info)
+    username_combo.grid(row=1, column=2)
 
     password_label = Label(root, text="password", font=("Helvatica", 10), fg='red')
     password_label.grid(row=2, column=1)
@@ -143,8 +160,16 @@ def ui():
     stock_label.grid(row=3, column=1, pady=10)
 
     global stock_entry
-    stock_entry = Entry(root)
-    stock_entry.grid(row=3, column=2, padx=70)
+    
+    stock_entry = StringVar()
+    stock_entry.set(" ")    
+    stock_drop = ttk.Combobox(root, textvariable=stock_entry, values=STOCKS, width=17)
+    stock_drop.grid(row=3, column=2)
+    stock_drop.current()
+    stock_drop.bind("<<ComboboxSelected>>", short_form)
+    
+    stock_description = Button(root, text='Edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
+    stock_description.grid(row=3, column=2, padx=(0, 200))
 
     stock_price_label = Label(root, text="قیمت سهم (ريال)", font=("Helvatica", 10))
     stock_price_label.grid(row=4, column=1, pady=10)
@@ -196,6 +221,10 @@ def ui():
 
     sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
     sell_btn.grid(row=11, column=2)
+
+    save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black', command=save_info, width=10)
+    save_btn.grid(row=11, column=2, padx=(0, 250))
+
 
     root.mainloop()
 

@@ -23,24 +23,21 @@ class StockData:
             )
             """)
         
-    def save_information(self, username=None, password=None, name=None, description=None):
+    def save_stock(self, username=None, password=None, stock_name=None, stock_description=None):
         if self.table == "stock":
-            if name != None:
-                self.cursor.execute("INSERT INTO stocks VALUES (:s_name, :s_description)", 
-                {
-                    "s_name": name,
-                    "s_description": description
-                }) 
-                
+            self.cursor.execute("INSERT INTO stocks VALUES (:s_name, :s_description)", 
+            {
+                "s_name": stock_name,
+                "s_description": stock_description
+            }) 
+            
         elif self.table == "user":
-            if username != None and password != None:
-                self.cursor.execute("INSERT INTO users VALUES (:_user, :_password)", 
-                {
-                    "_user": username,
-                    "_password": password
-                }) 
-            else:
-                messagebox.showerror(title="Empty field", message="نام کاربری یا پسورد وارد نشده است")
+            self.cursor.execute("INSERT INTO users VALUES (:_user, :_password)", 
+            {
+                "_user": username,
+                "_password": password
+            }) 
+        
         self.con.commit()
         self.con.close()
 
@@ -60,7 +57,7 @@ class StockData:
         self.con.commit()
         self.con.close()
 
-    def show_single_query(self, username=None, pk=None):
+    def show_single_query(self, pk):
         if self.table == "stock":
             try:
                 self.cursor.execute(f"SELECT *, rowid FROM stocks WHERE rowid = {pk}")
@@ -70,9 +67,10 @@ class StockData:
                 return self.stock
             except sqlite3.OperationalError:
                 messagebox.showerror(title="Stock Pk", message="You haven't spcefied any primary key")
-        elif self.table == "user":
+        elif:
+
             try:
-                self.cursor.execute(f"SELECT * FROM users WHERE user_name = '{username}'")
+                self.cursor.execute(f"SELECT *, rowid FROM users WHERE rowid = {pk}")
                 self.user_names = self.cursor.fetchall()
                 self.con.commit()
 
@@ -91,7 +89,7 @@ class StockData:
         self.con.commit()
         self.con.close()
        
-    def update(self, name=None, description=None, username=None, password=None, pk=None):
+    def update(self, name=None, description=None, username=None, password=None, pk):
         if self.table == "stock":
             self.cursor.execute("""UPDATE stocks SET name = :_name, description = :_description WHERE oid = :oid""", {
                 '_name': name,
@@ -100,9 +98,10 @@ class StockData:
             })
         
         elif self.table == "user":
-            self.cursor.execute(f"UPDATE users SET user_name = :_user, user_password = :_password WHERE user_name = '{username}'", {
+            self.cursor.execute("""UPDATE users SET user_name = :_user, user_password = :_password WHERE oid = :oid""", {
                 '_user': username,
-                '_password': password
+                '_password': password,
+                'oid': pk
             })
         self.con.commit()
         self.con.close()                       
