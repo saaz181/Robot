@@ -31,8 +31,8 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 # Using logging module to see what error did we encountered
-logging.basicConfig(filename='robot.log', filemode='w', format='%(asctime)s - %(levelname)s - %(message)s')
-
+logging.basicConfig(filename=resource_path('robot.log'), filemode='a', 
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Clear price, quantity and total price
 def clear():
@@ -40,16 +40,14 @@ def clear():
     stock_quantity_entry.delete(0, END)
     cost_label.configure(text="0")
 
-
 # Clear price & quantity
 def clear_all():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
 
-
 # our buy button "green one"
 def order(type):
-    global username, password, stock, stock_price, stock_quantity, start_time, end_time, trade_type
+    global username, password, stock, stock_price, stock_quantity, start_time, end_time, delay, trade_type
     username = user_entry.get()  # username entry field string
     password = password_entry.get()  # password entry field string
     stock = stock_entry.get()  # stock entry field "don't need to change language" string
@@ -57,6 +55,10 @@ def order(type):
     stock_quantity = stock_quantity_entry.get()  # quantity of a stock entry field string
     start_time = start_time_entry.get()  # what time to start entry field string
     end_time = end_time_entry.get()  # what time to finish entry field string
+    try:
+        delay = int(delay_between_order.get())  # Delay between each order
+    except ValueError:
+        messagebox.showerror(title="Base 10 Error", message="لطفا اعداد را به صورت صحیح و غیر اعشاری وارد کنید")
     trade_type = type  # specifying the type of our trade which is BUY
 
     type_value = {"s": 'فروش', "b": "خرید"}
@@ -122,7 +124,7 @@ def ui():
     root.title("Stock Bot")
     root.resizable(False, False)
     root.iconbitmap(resource_path('bot.ico'))
-    root.geometry('400x400')
+    root.geometry('400x450')
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
 
@@ -175,18 +177,25 @@ def ui():
     end_time_entry = Entry(root)
     end_time_entry.grid(row=8, column=2, padx=70)
 
+    delay_between_order_label = Label(root, text="فاصله بین  هر سفارش (میلی ثانیه)", fg="red")
+    delay_between_order_label.grid(row=9, column=1, pady=10)
+
+    global delay_between_order
+    delay_between_order = Spinbox(root, from_=300, to=1000, justify=CENTER, width=10)
+    delay_between_order.grid(row=9, column=2, pady=10)
+
     global cost_label
     cost_label = Label(root, text="0")
-    cost_label.grid(row=9, column=2)
+    cost_label.grid(row=10, column=2)
 
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
-    cost_label_text.grid(row=9, column=1)
+    cost_label_text.grid(row=10, column=1)
 
     buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('b'), width=5)
-    buy_btn.grid(row=10, column=1, pady=10)
+    buy_btn.grid(row=11, column=1, pady=10)
 
     sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
-    sell_btn.grid(row=10, column=2)
+    sell_btn.grid(row=11, column=2)
 
     root.mainloop()
 
@@ -321,7 +330,7 @@ def robot_trade(trade_time):
     order_btn = driver.find_element_by_xpath('//*[@id="send_order_btnSendOrder"]')
     for _ in range(trade_time * 4):
         try:
-            sleep(0.334)  # delay time between each order
+            sleep(delay / 1000)  # delay time between each order
             # sell or buy button ** which the path is the same **
             order_btn.click()
 
@@ -368,6 +377,7 @@ def start_trading():
     PATH = resource_path("chromedriver.exe")
     # starting driver
     driver = webdriver.Chrome(options=chrome_options, executable_path=PATH)
+    print(delay / 1000)
 
     log_in()  # Initializing the login function
     stock_search()  # Initializing the stock search function

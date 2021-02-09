@@ -5,6 +5,7 @@ from selenium import webdriver
 from time import sleep
 from tkinter import messagebox
 from data import StockData
+from tkinter import ttk
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -29,6 +30,10 @@ def add():
 def show():
     stock = StockData()
     stocks = stock.show()
+    # Getting the number of queries
+    global stocks_qs_count 
+    stocks_qs_count = len(stocks)
+    
     show_label = Label(master, text="")
     show_label.grid(row=1, column=1)
     stock_show = ""
@@ -38,19 +43,22 @@ def show():
     show_label.config(text=stock_show)
 
 def delete():
-    pk = stock_name_entry.get()
-    stock = StockData()
-    text = stock.show_single_query(pk)
-    try:
-        yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
-                                                                        + str(text[0][0]))
+    if stocks_qs_count != 1:
+        pk = stock_name_entry.get()
+        stock = StockData()
+        text = stock.show_single_query(pk)
+        try:
+            yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
+                                                                            + str(text[0][0]))
 
-        if yes_no:
-            # Remove from database
-            stock.delete(pk)
-            stock_name_entry.delete(0, END)
-    except TypeError:
-        print("Primary key didn't specefied")
+            if yes_no:
+                # Remove from database
+                stock.delete(pk)
+                stock_name_entry.delete(0, END)
+        except TypeError:
+            print("Primary key didn't specefied")
+    else:
+        messagebox.showwarning(title="Delete Stock", message="You need to at least have one Stock")
 
 def update():
     name = stock_name_entry.get()
@@ -62,27 +70,31 @@ def update():
     messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
 
 def edit():
-    master.title("Update stock info")
-    stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
-    submit_btn.destroy()
-    show_btn.destroy()
-    del_btn.destroy()
-    edit_btn.destroy()
-
     global pk_up
     pk_up = stock_name_entry.get()
-    stock_name_entry.delete(0, END)
     stock = StockData()
-    stocks = stock.show_single_query(pk_up)
-    try:
-        stock_name_entry.insert(0, stocks[0][0])
-        stock_des_entry.insert(0, stocks[0][1])
-    except TypeError:
-        print("Primary key didn't specefied")    
+    s_name = stock.show_single_query(pk_up)
 
-    edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=update)
-    edit_btn_1.grid(row=2, column=1, pady=10, padx=(0, 300))
+    if s_name != []: 
+        master.title("Update stock info")
+        stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
+        submit_btn.destroy()
+        show_btn.destroy()
+        del_btn.destroy()
+        edit_btn.destroy()
 
+        stock_name_entry.delete(0, END)
+        stocks = stock.show_single_query(pk_up)
+        try:
+            stock_name_entry.insert(0, stocks[0][0])
+            stock_des_entry.insert(0, stocks[0][1])
+        except TypeError:
+            print("Primary key didn't specefied")    
+
+        edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=update)
+        edit_btn_1.grid(row=2, column=1, pady=10, padx=(0, 300))
+    else:
+        messagebox.showerror(title="Database Error", message="This query is empty")
 
 def stock_window():
     global master
@@ -133,6 +145,9 @@ def short_form(val):
 _stocks = StockData()
 STOCKS = [s[0] + " | " + s[1] for s in _stocks.show()]
 
+def print_val():
+    value = delay_between_order.get()
+    print(value)
 
 def ui():
     global root
@@ -140,7 +155,7 @@ def ui():
     root.title("Stock Bot")
     root.resizable(False, False)
     root.iconbitmap(resource_path('bot.ico'))
-    root.geometry('400x400')
+    root.geometry('400x450')
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=0, column=0, padx=50, pady=15)
 
@@ -203,18 +218,25 @@ def ui():
     end_time_entry = Entry(root)
     end_time_entry.grid(row=7, column=1, padx=70)
 
+    delay_between_order_label = Label(root, text="فاصله بین  هر سفارش (میلی ثانیه)", fg="red")
+    delay_between_order_label.grid(row=8, column=0, pady=10)
+
+    global delay_between_order
+    delay_between_order = Spinbox(root, from_=300, to=1000, justify=CENTER, width=10, command=print_val)
+    delay_between_order.grid(row=8, column=1, pady=10)
+
     global cost_label
     cost_label = Label(root, text="0")
-    cost_label.grid(row=8, column=1)
+    cost_label.grid(row=9, column=1)
 
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
-    cost_label_text.grid(row=8, column=0)
+    cost_label_text.grid(row=9, column=0)
 
     buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('b'), width=5)
-    buy_btn.grid(row=9, column=0, pady=10)
+    buy_btn.grid(row=10, column=0, pady=10)
 
     sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
-    sell_btn.grid(row=9, column=1)
+    sell_btn.grid(row=10, column=1)
 
     root.mainloop()
 

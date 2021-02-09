@@ -1,5 +1,18 @@
 import sqlite3
 from tkinter import messagebox
+import csv
+
+def read_from_csv():
+    with open('stock.txt') as f:
+        csv_reader = csv.reader(f, delimiter=',')
+        line_count = 0
+        for row in csv_reader:
+            print(row)
+            line_count += 1
+    
+    print(f'Processed {line_count} lines.')
+
+
 
 
 class StockData:
@@ -53,3 +66,5 @@ class StockData:
         })
         self.con.commit()
         self.con.close()                       
+
+
