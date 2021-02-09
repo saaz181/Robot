@@ -13,32 +13,35 @@ def resource_path(relative_path):
     return os.path.join(os.path.abspath("."), relative_path)
 
 
-def add():
-    name = stock_name_entry.get()
-    description = stock_des_entry.get()
+def add(name, description, place=None):
     check = StockData("stock")
     list_stock = check.show()
+
     names_list = [s[0] for s in list_stock]
-    description_list = [s[1] for s in list_stock]
-    if name not in names_list and description not in description_list:
+    
+    if name not in names_list:
         if name != "":
             # insert into database
             stock = StockData("stock")
             stock.save_information(name=name, description=description)
             # Clear the fields
-            stock_name_entry.delete(0, END)
-            stock_des_entry.delete(0, END)
+            if place == "E":
+                stock_name_entry.delete(0, END)
+                stock_des_entry.delete(0, END)
         else:
             messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
+            refresh = False
     else:
         messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
-        stock_name_entry.delete(0, END)
-        stock_des_entry.delete(0, END)
+        if place == "E":
+            stock_name_entry.delete(0, END)
+            stock_des_entry.delete(0, END)
         
         
-def show():
+def show_qs():
     stock = StockData("stock")
     stocks = stock.show()
+    
     # Getting the number of queries
     global stocks_qs_count 
     stocks_qs_count = len(stocks)
@@ -47,42 +50,41 @@ def show():
     show_label.grid(row=1, column=1)
     stock_show = ""
     for s in stocks:
-        stock_show += str(s[2]) + " | " + s[1] + " | " + s[0] + "\n"
+        stock_show += s[0] + "\n"
 
     show_label.config(text=stock_show)
 
 def delete():
-    if stocks_qs_count != 1:
-        pk = stock_name_entry.get()
-        stock = StockData("stock")
-        text = stock.show_single_query(pk)
-        try:
-            yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
-                                                                            + str(text[0][0]))
+    name = stock_name_entry.get()
+    _stock = StockData("stock")
+    text = _stock.show_single_query(name=name)[0][0]
+    print(text)
+    try:
+        yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
+                                                                        + str(text))
 
-            if yes_no:
-                # Remove from database
-                stock.delete(pk)
-                stock_name_entry.delete(0, END)
-        except TypeError:
-            print("Primary key didn't specefied")
-    else:
-        messagebox.showwarning(title="Delete Stock", message="You need to at least have one Stock")
+        if yes_no:
+            # Remove from database
+            _stock.delete(name=name)
+            stock_name_entry.delete(0, END)
+            messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
+    except TypeError:
+        print("Primary key didn't specefied")
 
 def update():
     name = stock_name_entry.get()
     description = stock_des_entry.get()
-    stock = StockData("stock")
-    stock.update(name=name, description=description, pk=pk_up)
+    
+    stock_data.update(name=name, description=description)
     master.destroy()
     stock_window()
     messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
 
 def edit():
-    global pk_up
-    pk_up = stock_name_entry.get()
-    stock = StockData("stock")
-    s_name = stock.show_single_query(pk_up)
+    name_stock = stock_name_entry.get()
+    global stock_data
+    stock_data = StockData("stock")
+    s_name = stock_data.show_single_query(name=name_stock)
 
     if s_name != []: 
         master.title("Update stock info")
@@ -93,10 +95,11 @@ def edit():
         edit_btn.destroy()
 
         stock_name_entry.delete(0, END)
-        stocks = stock.show_single_query(pk_up)
+        _stocks = stock_data.show_single_query(name=name_stock)
         try:
-            stock_name_entry.insert(0, stocks[0][0])
-            stock_des_entry.insert(0, stocks[0][1])
+            stock_name_entry.insert(0, _stocks[0][0])
+            if _stocks[0][1] != None:
+                stock_des_entry.insert(0, _stocks[0][1])
         except TypeError:
             print("Primary key didn't specefied")    
 
@@ -131,10 +134,10 @@ def stock_window():
     stock_des_entry.grid(row=1, column=1, padx=70)
 
     global submit_btn, show_btn, del_btn, edit_btn
-    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=add, width=5)
+    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E"), width=5)
     submit_btn.grid(row=2, column=1, pady=5, padx=(100, 0))
 
-    show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show, width=5)
+    show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show_qs, width=5)
     show_btn.grid(row=2, column=1, pady=5, padx=(100, 120))
 
     del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete, width=5)
@@ -150,52 +153,45 @@ def short_form(val):
     var.set(selected_value[:width] + ("" if len(selected_value) <= width else "..."))
     selected_value = str(selected_value).split(" | ")[0]
 
-
-def print_val():
-    value = delay_between_order.get()
-    print(value)
-
-
 def save_info():
-    user = str(var_user.get()).split(" | ")[0]
+    user = str(var_user.get())
     pswd = password_entry.get()
     
-    stock = var.get()
+    stock = str(var.get())
     check_user = StockData("user")
-    check_stock = StockData("stock")
-    
-    list_stock = check_stock.show()
-    stock_name = [s[0] for s in list_stock]
     
     list_users = check_user.show()
     users_list = [s[0] for s in list_users]
     pswds_list = [s[1] for s in list_users]
-    
+    global refresh
+    refresh = True
     if user not in users_list and user != "" and pswd != "":
         user_create = StockData('user')
         user_create.save_information(username=user, password=pswd)
-        user_info.append(user)
 
     elif user in users_list:
-        change = messagebox.askokcancel(title="Change Info", message=f" را تغییر دهید؟{user}میخواهید اطلاعات مربوط به ")
-        if change:
-            user_update = StockData('user')
-            user_update.update(username=user, password=pswd)
+        user_check = StockData('user')
+        check_user_name = user_check.show_single_query(username=user)
+        if check_user_name[0][0] != user or check_user_name[0][1] != pswd:
+            change = messagebox.askokcancel(title="Change Info", message=f"میخواهید اطلاعات مربوط به {user} را تغییر دهید؟ ")
+            if change:
+                user_update = StockData('user')
+                user_update.update(username=user, password=pswd)
+                messagebox.showinfo(title="Success", message="اطلاعات با موفقیت تغییر یافت")
 
-    else:
-        messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
-
-    if stock not in stock_name and stock != "" and stock != None:
-        stock_create = StockData('stock')
-        stock_create.save_information(name=stock)
-        STOCKS.append(stock)
-    else:
-        messagebox.showinfo(title="Same Stock", message="این سهم قبلا ذخیره شده است")
-
-
+        else:
+            messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
+            refresh = False
+    print(stock)
+    if stock != " ":
+        add(stock, description=None)
+    
     password_entry.delete(0, END)
     var_user.set('')
     var.set('')
+    if refresh:
+        root.destroy()
+        ui()
 
 def auto_complete(*args):
     user_name = str(var_user.get())
@@ -204,11 +200,6 @@ def auto_complete(*args):
     password_entry.delete(0, END)
     password_entry.insert(0, related_password)
 
-_stocks = StockData("stock")
-STOCKS = [s[0] for s in _stocks.show()]
-
-_users = StockData('user')
-user_info = [s[0] for s in _users.show()]
 
 def hide():
     password_entry.config(show="*")
@@ -221,6 +212,13 @@ def show():
     
 
 def ui():
+    _stocks = StockData("stock")
+    STOCKS = [s[0] for s in _stocks.show()]
+
+    _users = StockData('user')
+    user_info = [s[0] for s in _users.show()]
+
+
     global root
     root = Tk()
     root.title("Stock Bot")
@@ -233,7 +231,7 @@ def ui():
     global var_user
     var_user = StringVar()
 
-    user_entry = ttk.Combobox(root, width=17, textvariable=var_user, values=user_info, height=10)
+    user_entry = ttk.Combobox(root, width=17, textvariable=var_user, values=user_info, height=5)
     user_entry.grid(row=0, column=1)
     user_entry.current()
     user_entry.bind("<<ComboboxSelected>>", auto_complete)
@@ -257,12 +255,11 @@ def ui():
     var = StringVar()
     var.set(" ")
     global stock_drop
-    stock_drop = ttk.Combobox(root, textvariable=var, values=STOCKS, width=17)
+    stock_drop = ttk.Combobox(root, textvariable=var, values=STOCKS, width=17, height=8)
     stock_drop.grid(row=2, column=1)
     stock_drop.current()
-    stock_drop.bind("<<ComboboxSelected>>", short_form)
     
-
+    
     stock_description = Button(root, text='Edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
     stock_description.grid(row=2, column=1, padx=(0, 200))
 
@@ -301,7 +298,7 @@ def ui():
     delay_between_order_label.grid(row=8, column=0, pady=10)
 
     global delay_between_order
-    delay_between_order = Spinbox(root, from_=300, to=1000, justify=CENTER, width=10, command=print_val)
+    delay_between_order = Spinbox(root, from_=300, to=1000, justify=CENTER, width=10)
     delay_between_order.grid(row=8, column=1, pady=10)
 
     global cost_label

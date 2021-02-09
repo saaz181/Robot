@@ -60,16 +60,17 @@ class StockData:
         self.con.commit()
         self.con.close()
 
-    def show_single_query(self, username=None, pk=None):
+    def show_single_query(self, username=None, name=None):
         if self.table == "stock":
             try:
-                self.cursor.execute(f"SELECT *, rowid FROM stocks WHERE rowid = {pk}")
+                self.cursor.execute(f"SELECT * FROM stocks WHERE name = '{name}'")
                 self.stock = self.cursor.fetchall()
                 self.con.commit()
 
                 return self.stock
             except sqlite3.OperationalError:
                 messagebox.showerror(title="Stock Pk", message="You haven't spcefied any primary key")
+        
         elif self.table == "user":
             try:
                 self.cursor.execute(f"SELECT * FROM users WHERE user_name = '{username}'")
@@ -79,24 +80,24 @@ class StockData:
                 return self.user_names
             except sqlite3.OperationalError:
                 messagebox.showerror(title="Stock Pk", message="You haven't spcefied any primary key")
+        
+        self.con.close()
 
-
-    def delete(self, pk):
+    def delete(self, name=None, username=None):
         if self.table == "stock":
-            self.cursor.execute(f"DELETE FROM stocks WHERE rowid = {pk}")
+            self.cursor.execute(f"DELETE * FROM stocks WHERE name = {name}")
         
         elif self.table == "user":
-            self.cursor.execute(f"DELETE FROM users WHERE rowid = {pk}")
+            self.cursor.execute(f"DELETE * FROM users WHERE user_name = {username}")
        
         self.con.commit()
         self.con.close()
        
-    def update(self, name=None, description=None, username=None, password=None, pk=None):
+    def update(self, name=None, description=None, username=None, password=None):
         if self.table == "stock":
-            self.cursor.execute("""UPDATE stocks SET name = :_name, description = :_description WHERE oid = :oid""", {
+            self.cursor.execute(f"UPDATE stocks SET name = :_name, description = :_description WHERE name = '{name}'", {
                 '_name': name,
                 '_description': description,
-                'oid': pk
             })
         
         elif self.table == "user":

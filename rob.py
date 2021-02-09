@@ -26,11 +26,103 @@ ALGORITHM:
 """
 
 
-# For .exe file "PyInstaller" module
+# For .exe file "PyInstaller" module and finding files easily
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+
+def add(name, description, place=None):
+    check = StockData("stock")
+    list_stock = check.show()
+
+    names_list = [s[0] for s in list_stock]
+    
+    if name not in names_list:
+        if name != "":
+            # insert into database
+            stock = StockData("stock")
+            stock.save_information(name=name, description=description)
+            # Clear the fields
+            if place == "E":
+                stock_name_entry.delete(0, END)
+                stock_des_entry.delete(0, END)
+        
+    else:
+        messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
+        if place == "E":
+            stock_name_entry.delete(0, END)
+            stock_des_entry.delete(0, END)
+
+def show_qs():
+    stock = StockData("stock")
+    stocks = stock.show()
+    
+    # Getting the number of queries
+    global stocks_qs_count 
+    stocks_qs_count = len(stocks)
+    
+    show_label = Label(master, text="")
+    show_label.grid(row=1, column=1)
+    stock_show = ""
+    for s in stocks:
+        stock_show += s[0] + "\n"
+
+    show_label.config(text=stock_show)
+
+def delete():
+    name = stock_name_entry.get()
+    _stock = StockData("stock")
+    text = _stock.show_single_query(name=name)[0][0]
+    print(text)
+    try:
+        yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
+                                                                        + str(text))
+
+        if yes_no:
+            # Remove from database
+            _stock.delete(name=name)
+            stock_name_entry.delete(0, END)
+            messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
+    except TypeError:
+        print("Primary key didn't specefied")
+
+def update():
+    name = stock_name_entry.get()
+    description = stock_des_entry.get()
+    
+    stock_data.update(name=name, description=description)
+    master.destroy()
+    stock_window()
+    messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
+
+def edit():
+    name_stock = stock_name_entry.get()
+    global stock_data
+    stock_data = StockData("stock")
+    s_name = stock_data.show_single_query(name=name_stock)
+
+    if s_name != []: 
+        master.title("Update stock info")
+        stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
+        submit_btn.destroy()
+        show_btn.destroy()
+        del_btn.destroy()
+        edit_btn.destroy()
+
+        stock_name_entry.delete(0, END)
+        _stocks = stock_data.show_single_query(name=name_stock)
+        try:
+            stock_name_entry.insert(0, _stocks[0][0])
+            if _stocks[0][1] != None:
+                stock_des_entry.insert(0, _stocks[0][1])
+        except TypeError:
+            print("Primary key didn't specefied")    
+
+        edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=update)
+        edit_btn_1.grid(row=2, column=1, pady=10, padx=(0, 300))
+    else:
+        messagebox.showerror(title="Database Error", message="This query is empty")    
 
 # Using logging module to see what error did we encountered
 logging.basicConfig(filename=resource_path('robot.log'), filemode='a', 
@@ -119,19 +211,108 @@ def order(type):
                 # running bot separately from our GUI
                 threading.Thread(target=start_trading).start()
 
+
+# ***** #
+# hiding the password entry
+def hide():
+    password_entry.config(show="*")
+    show_password_btn.config(text="show password", command=show)
+# showing the password entry
+def show():
+    if password_entry.get() != "":
+        password_entry.config(show="")
+        show_password_btn.config(text="hide password", command=hide)
+# ***** #
+
 def stock_window():
-    pass
+    global master
+    master = Toplevel(root)
+    master.title("Add a Stock")
+    master.iconbitmap(resource_path('bot.ico'))
+    master.geometry('400x180')
+    
+    global stock_label
+    stock_label = LabelFrame(master, text="اضافه کردن سهم", width=100)
+    stock_label.grid(row=0, column=1, padx=30, ipady=8, ipadx=5)
 
-STOCKS = []
+    stock_name_label = Label(stock_label, text="نام سهم", font=("Helvatica", 12))
+    stock_name_label.grid(row=0, column=0, pady=10, padx=(10, 0))
 
-def short_form():
-    pass
+    stock_des_label = Label(stock_label, text="توضیحات", font=("Helvatica", 12))
+    stock_des_label.grid(row=1, column=0, padx=(10, 0))
 
+    global stock_name_entry
+    stock_name_entry = Entry(stock_label)
+    stock_name_entry.grid(row=0, column=1, padx=70)
+
+    global stock_des_entry
+    stock_des_entry = Entry(stock_label)
+    stock_des_entry.grid(row=1, column=1, padx=70)
+
+    global submit_btn, show_btn, del_btn, edit_btn
+    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E"), width=5)
+    submit_btn.grid(row=2, column=1, pady=5, padx=(100, 0))
+
+    show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show_qs, width=5)
+    show_btn.grid(row=2, column=1, pady=5, padx=(100, 120))
+
+    del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete, width=5)
+    del_btn.grid(row=2, column=1, pady=5, padx=(40, 200))
+
+    edit_btn = Button(stock_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
+    edit_btn.grid(row=2, column=1, pady=10, padx=(0, 300))
+
+
+
+# saving the username and password and the stock's name into database
 def save_info():
-    pass
+    user = user_entry.get() # getting username combo value
+    pswd = password_entry.get()  # getting password combo value
+    stock = str(stock_entry.get()) # getting stock combo value
+
+    check_user = StockData("user")  # connect to database
+    
+    list_users = check_user.show()
+
+    users_list = [s[0] for s in list_users]
+    pswds_list = [s[1] for s in list_users]
+    
+    # check if user not already saved and password isn't empty
+    if user not in users_list and user != "" and pswd != "":
+        user_create = StockData('user')
+        user_create.save_information(username=user, password=pswd)
+
+    elif user in users_list:
+        user_check = StockData('user')
+        check_user_name = user_check.show_single_query(username=user)
+        if check_user_name[0][0] != user or check_user_name[0][1] != pswd:
+            change = messagebox.askokcancel(title="Change Info", message=f"میخواهید اطلاعات مربوط به {user} را تغییر دهید؟ ")
+            if change:
+                user_update = StockData('user')
+                user_update.update(username=user, password=pswd)
+                messagebox.showinfo(title="Success", message="اطلاعات با موفقیت تغییر یافت")
+
+        else:
+            messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
+        
+    add(stock, description=None)
+    
+    password_entry.delete(0, END)
+    user_entry.set('')
+    stock_entry.set('')
+
+# will fill the password field with related username
+def auto_complete(*args):
+    user_name = str(user_entry.get())
+    users = StockData("user")
+    related_password = users.show_single_query(username=user_name)[0][1]
+    password_entry.delete(0, END)
+    password_entry.insert(0, related_password)
+
 
 # our GUI function which runs separately from TRADEs functions
 def ui():
+    global root
     root = Tk()
     root.title("Stock Bot")
     root.resizable(False, False)
@@ -140,33 +321,40 @@ def ui():
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
 
+    _users = StockData('user')  # connecting to users table
+    user_info = [s[0] for s in _users.show()]
     global user_entry
     user_entry = StringVar()
 
-    username_combo = ttk.Combobox(root, width=17, textvariable=user_entry, values=[], height=10)
+    username_combo = ttk.Combobox(root, width=17, textvariable=user_entry, values=user_info, height=5)
     username_combo.grid(row=0, column=1)
-    # username_combo.current(0)
-    # username_combo.bind("<<ComboboxSelected>>", save_info)
+    username_combo.current()
+    username_combo.bind("<<ComboboxSelected>>", auto_complete)
     username_combo.grid(row=1, column=2)
 
     password_label = Label(root, text="password", font=("Helvatica", 10), fg='red')
     password_label.grid(row=2, column=1)
 
     global password_entry
-    password_entry = Entry(root)
+    password_entry = Entry(root, show="*")
     password_entry.grid(row=2, column=2, padx=70)
+
+    global show_password_btn 
+    show_password_btn = Button(root, text="show password", relief=SUNKEN, bd=0, fg="blue", command=show)
+    show_password_btn.grid(row=2, column=2, padx=(0, 250))
 
     stock_label = Label(root, text="نماد سهم", font=("Helvatica", 10))
     stock_label.grid(row=3, column=1, pady=10)
 
+    _stocks = StockData("stock")  # connecting to stocks table
+    STOCKS = [s[0] for s in _stocks.show()]
     global stock_entry
     
     stock_entry = StringVar()
-    stock_entry.set(" ")    
-    stock_drop = ttk.Combobox(root, textvariable=stock_entry, values=STOCKS, width=17)
+    stock_entry.set("")    
+    stock_drop = ttk.Combobox(root, textvariable=stock_entry, values=STOCKS, width=17, height=8)
     stock_drop.grid(row=3, column=2)
     stock_drop.current()
-    stock_drop.bind("<<ComboboxSelected>>", short_form)
     
     stock_description = Button(root, text='Edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
     stock_description.grid(row=3, column=2, padx=(0, 200))
