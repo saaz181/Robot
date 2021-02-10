@@ -31,64 +31,97 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+def refresh():
+    root.destroy()
+    ui()
 
-def add(name, description, place=None):
-    check = StockData("stock")
-    list_stock = check.show()
+def add(name, description, place=None, window=None, change_password=False):
+    if window == "S" or window == "M":
+        check = StockData("stock")
+        list_stock = check.show()
 
-    names_list = [s[0] for s in list_stock]
-    
-    if name not in names_list:
-        if name != "":
-            # insert into database
-            stock = StockData("stock")
-            stock.save_information(name=name, description=description)
-            # Clear the fields
-            if place == "E":
-                stock_des_entry.delete(0, END)
-                stock_name_entry.delete(0, END)
-                messagebox.showinfo(title="Stock Add", message="اطلاعات سهم ذخیره شد")
+        names_list = [s[0] for s in list_stock]
+        
+        if name not in names_list:
+            if name != "":
+                # insert into database
+                stock = StockData("stock")
+                stock.save_information(name=name, description=description)
+                # Clear the fields
+                if place == "E":
+                    stock_des_entry.delete(0, END)
+                    stock_name_entry.delete(0, END)
+                    messagebox.showinfo(title="Stock Add", message="اطلاعات سهم ذخیره شد")
+            else:
+                if place == "E":
+                    messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
+                _refresh = False
         else:
+            messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
             if place == "E":
-                messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
-            refresh = False
-    else:
-        messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
-        if place == "E":
-            stock_name_entry.delete(0, END)
-            stock_des_entry.delete(0, END)
+                stock_name_entry.delete(0, END)
+                stock_des_entry.delete(0, END)
+                
+    elif window == "U":                                  
+        user = user_name_entry.get()
+        pswd = user_pas_entry.get()
 
-def show_qs():
-    stock = StockData("stock")
-    stocks = stock.show()
-    
-    # Getting the number of queries
-    global stocks_qs_count 
-    stocks_qs_count = len(stocks)
-    
-    show_label = Label(master, text="")
-    show_label.grid(row=1, column=1)
-    stock_show = ""
-    for s in stocks:
-        stock_show += s[0] + "\n"
+        user_check = StockData("user")
+        users_list = [s[0] for s in user_check.show()]
 
-    show_label.config(text=stock_show)
+        if user not in users_list and user != "" and pswd != "":
+            user_save = StockData("user")
+            user_save.save_information(username=user, password=pswd)
+            messagebox.showinfo(title="Success", message="کاربر با موفقیت افزوده شد")
+            refresh()
+        
+        elif (user in users_list or change_password) and pswd != "" and user != "":
+            want_to_change = messagebox.askokcancel(title="Update Info", message=f"آیا میخواهید اطلاعات مربوط به {user} را تغییر دهید؟")
+            if want_to_change:
+                user_qs = StockData("user")
+                pk = user_qs.show_single_query(username=user)[0][2]
 
-def delete():
-    name = stock_name_entry.get()
-    _stock = StockData("stock")
-    text = _stock.show_single_query(name=name)[0][0]
-    try:
-        yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
+                update_user_qs = StockData("user")
+                update_user_qs.update(username=user, password=pswd, pk=pk)
+                messagebox.showinfo(title="Success", message="اطلاعات کاربر با موفقیت تغییر یافت")
+                refresh()
 
-        if yes_no:
-            # Remove from database
-            _stock.delete(name=name)
-            messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
-            root.destroy()
-            ui()
-    except TypeError:
-        print("Primary key didn't specefied")
+def delete(window):
+    if window == "S":
+        name = stock_name_entry.get()
+        _stock = StockData("stock")
+        text = _stock.show_single_query(name=name)[0][0]
+        try:
+            yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
+
+            if yes_no:
+                # Remove from database
+                _stock.delete(name=name)
+                messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
+                root.destroy()
+                ui()
+        except TypeError:
+            print("Primary key didn't specefied")
+   
+    elif window == "U":
+        user = user_name_entry.get()
+        pswd_check = user_pas_entry.get()
+        _user = StockData("user")
+        text = _user.show_single_query(username=user)
+        try:
+            yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف کاربر {text[0][0]} مطمئن هستید؟")
+
+            if yes_no:
+                # Remove from database
+                if pswd_check == text[0][1]:
+                    _user.delete(username=user)
+                    messagebox.showinfo(title="Success", message="کاربر با موفقیت حذف شد")
+                    root.destroy()
+                    ui()
+                else:
+                    messagebox.showerror(title="Password Error", message="رمز درست وارد نشده است")    
+        except TypeError:
+            print("Primary key didn't specefied")
 
 def update():
     name = stock_name_entry.get()
@@ -225,16 +258,24 @@ def order(type):
 
 
 # ***** #
-# hiding the password entry
-def hide():
-    password_entry.config(show=bullet)
-    show_password_btn.config(text="show", command=show)
-# showing the password entry
-def show():
-    if password_entry.get() != "":
+def hide(place):
+    if place == "M":
+        password_entry.config(show=bullet)
+        show_password_btn.config(text="show", command=lambda: show(place))
+    # we can use else instead of elif    
+    elif place == "U":
+        user_pas_entry.config(show=bullet)
+        show_password.config(text="show", command=lambda: show(place))
+
+# show the password in main window and user window
+def show(place):
+    if password_entry.get() != "" and place == "M":
         password_entry.config(show="")
-        show_password_btn.config(text="hide", command=hide)
-# ***** #
+        show_password_btn.config(text="hide", command=lambda: hide(place))
+    # we can use else instead of elif        
+    elif place == "U":
+        user_pas_entry.config(show="")
+        show_password.config(text="hide", command=lambda: hide(place))
 
 def stock_window():
     def put_in(*args):
@@ -282,18 +323,77 @@ def stock_window():
     stock_des_entry.grid(row=1, column=1, padx=70)
 
     global submit_btn, show_btn, del_btn, edit_btn
-    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E"), width=5)
+    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E", window="S"), width=5)
     submit_btn.grid(row=2, column=1, pady=5, padx=(100, 0))
 
-    # show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show_qs, width=5)
-    # show_btn.grid(row=2, column=1, pady=5, padx=(100, 120))
-
-    del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete, width=5)
+    
+    del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete("S"), width=5)
     del_btn.grid(row=2, column=1, pady=5, padx=(40, 140))
 
     edit_btn = Button(stock_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
     edit_btn.grid(row=2, column=1, pady=10, padx=(0, 300))
 
+
+# user profile window
+def user_profile():
+    def put_in(*args):
+        user_name = user_name_combo.get()
+        user_init = StockData("user")
+        user_data = user_init.show_single_query(username=user_name)
+        
+        user_name_entry.delete(0, END)
+        user_name_entry.insert(0, user_name)
+
+        user_pas_entry.delete(0, END)
+        user_pas_entry.insert(0, user_data[0][1])
+        
+    
+    main = Toplevel(root)
+    main.title("User Profile")
+    main.iconbitmap(resource_path('bot.ico'))
+    main.geometry("560x220")
+
+    global user_label
+    user_label = LabelFrame(main, text="تغییر نام کاربری", width=100)
+    user_label.grid(row=0, column=1, padx=30, ipady=8, ipadx=5)
+
+    user_name_emoji = Label(user_label, text="\U0001F464", font=("Helvatica", 50, "bold"), bg="grey", fg="white")
+    user_name_emoji.grid(row=0, column=0, pady=10, padx=(10, 0))
+
+    stock_name_label = Label(user_label, text="username", font=("Helvatica", 10, "italic"), fg="red")
+    stock_name_label.grid(row=0, column=1, pady=10, padx=(10, 0))
+
+    stock_des_label = Label(user_label, text="password", font=("Helvatica", 10, "italic"), fg="red")
+    stock_des_label.grid(row=1, column=1, padx=(10, 0))
+
+    global user_name_combo
+    user_name_combo = StringVar()
+    user_name_combo.set(" Choose ...")
+    user_drop = ttk.Combobox(user_label, textvariable=user_name_combo, values=user_info, width=17, height=6)
+    user_drop.grid(row=0, column=2, padx=(200, 0))
+    user_drop.current()
+    user_drop.bind("<<ComboboxSelected>>", put_in)
+
+    global user_name_entry
+    user_name_entry = Entry(user_label, justify=CENTER)
+    user_name_entry.grid(row=0, column=2, padx=(0, 90))
+
+    global user_pas_entry
+    user_pas_entry = Entry(user_label, justify=CENTER, show=bullet)
+    user_pas_entry.grid(row=1, column=2, padx=(0, 90))
+
+    global show_password
+    show_password = Button(user_label, text="show", relief=SUNKEN, bd=0, fg="blue", command=lambda: show("U"))
+    show_password.grid(row=1, column=2, padx=(100, 0))
+
+    add_btn = Button(user_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U"), width=5)
+    add_btn.grid(row=2, column=2, pady=5, padx=(100, 0))
+
+    delete_btn = Button(user_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: delete("U"), width=5)
+    delete_btn.grid(row=2, column=2, pady=5, padx=(40, 140))
+
+    edit_pswd_btn = Button(user_label, text='ویرایش رمز', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U", change_password=True), width=8)
+    edit_pswd_btn.grid(row=2, column=2, pady=10, padx=(0, 300))
 
 
 # saving the username and password and the stock's name into database
@@ -307,9 +407,9 @@ def save_info():
     list_users = check_user.show()
 
     users_list = [s[0] for s in list_users]
-    pswds_list = [s[1] for s in list_users]
-    global refresh
-    refresh = True
+    
+    global _refresh
+    _refresh = True
     # check if user not already saved and password isn't empty
     if user not in users_list and user != "" and pswd != "":
         user_create = StockData('user')
@@ -327,7 +427,7 @@ def save_info():
 
         else:
             messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
-            refresh = False
+            _refresh = False
         
     if stock != " ":
         add(stock, description=None)
@@ -335,7 +435,7 @@ def save_info():
     password_entry.delete(0, END)
     user_entry.set('')
     stock_entry.set('')
-    if refresh:
+    if _refresh:
         root.destroy()
         ui()
 
@@ -350,9 +450,6 @@ def auto_complete(*args):
 
 # our GUI function which runs separately from TRADEs functions
 def ui():
-    def refresh():
-        root.destroy()
-        ui()
     
     global root
     root = Tk()
@@ -363,11 +460,11 @@ def ui():
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
 
+    
+    global user_entry, user_info
+    user_entry = StringVar()
     _users = StockData('user')  # connecting to users table
     user_info = [s[0] for s in _users.show()]
-    global user_entry
-    user_entry = StringVar()
-
     username_combo = ttk.Combobox(root, width=17, textvariable=user_entry, values=user_info, height=5)
     username_combo.grid(row=0, column=1)
     username_combo.current()
@@ -383,7 +480,7 @@ def ui():
     password_entry.grid(row=2, column=2, padx=70)
 
     global show_password_btn 
-    show_password_btn = Button(root, text="show", relief=SUNKEN, bd=0, fg="blue", command=show)
+    show_password_btn = Button(root, text="show", relief=SUNKEN, bd=0, fg="blue", command=lambda: show('M'))
     show_password_btn.grid(row=2, column=2, padx=(0, 200))
 
     stock_label = Label(root, text="نماد سهم", font=("Helvatica", 10))
@@ -458,8 +555,8 @@ def ui():
 
     menubar = Menu(root)
     tab = Menu(menubar, tearoff=0)
+    tab.add_command(label="ویرایش نام کاربری   \U0001F464", command=user_profile)
     tab.add_command(label="ویرایش سهم   \U0001F58A", command=stock_window)
-    tab.add_command(label="ویرایش نام کاربری   \U0001F464")
     tab.add_command(label="Refresh           \U0001F504", command=refresh)
     tab.add_command(label="Save info        \U0001F4BE", command=save_info)
 

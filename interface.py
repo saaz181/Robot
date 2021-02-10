@@ -17,7 +17,7 @@ def refresh():
     ui()
 
 # For stock
-def add(name, description, place=None, window=None):
+def add(name, description, place=None, window=None, change_password=False):
     if window == "S" or window == "M":
         check = StockData("stock")
         list_stock = check.show()
@@ -57,7 +57,7 @@ def add(name, description, place=None, window=None):
             messagebox.showinfo(title="Success", message="کاربر با موفقیت افزوده شد")
             refresh()
         
-        elif user in users_list:
+        elif (user in users_list or change_password) and pswd != "" and user != "":
             want_to_change = messagebox.askokcancel(title="Update Info", message=f"آیا میخواهید اطلاعات مربوط به {user} را تغییر دهید؟")
             if want_to_change:
                 user_qs = StockData("user")
@@ -106,7 +106,8 @@ def delete(window):
                     messagebox.showerror(title="Password Error", message="رمز درست وارد نشده است")    
         except TypeError:
             print("Primary key didn't specefied")
-
+        except IndexError:
+            messagebox.showerror(title="Empty fields", message="لطفا فیلد هارا پرکنید")
 
 # For stock
 def update():
@@ -314,7 +315,7 @@ def user_profile():
 
     global user_name_combo
     user_name_combo = StringVar()
-    user_name_combo.set("Choose username")
+    user_name_combo.set(" Choose ...")
     user_drop = ttk.Combobox(user_label, textvariable=user_name_combo, values=user_info, width=17, height=6)
     user_drop.grid(row=0, column=2, padx=(200, 0))
     user_drop.current()
@@ -332,15 +333,15 @@ def user_profile():
     show_password = Button(user_label, text="show", relief=SUNKEN, bd=0, fg="blue", command=lambda: show("U"))
     show_password.grid(row=1, column=2, padx=(100, 0))
 
-    global submit_btn, show_btn, del_btn, edit_btn
-    submit_btn = Button(user_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U"), width=5)
-    submit_btn.grid(row=2, column=2, pady=5, padx=(100, 0))
+    
+    add_btn = Button(user_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U"), width=5)
+    add_btn.grid(row=2, column=2, pady=5, padx=(100, 0))
 
-    del_btn = Button(user_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: delete("U"), width=5)
-    del_btn.grid(row=2, column=2, pady=5, padx=(40, 140))
+    delete_btn = Button(user_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: delete("U"), width=5)
+    delete_btn.grid(row=2, column=2, pady=5, padx=(40, 140))
 
-    edit_btn = Button(user_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
-    edit_btn.grid(row=2, column=2, pady=10, padx=(0, 300))
+    edit_pswd_btn = Button(user_label, text='ویرایش رمز', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U", change_password=True), width=8)
+    edit_pswd_btn.grid(row=2, column=2, pady=10, padx=(0, 300))
 
    
 # main window of application
