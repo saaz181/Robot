@@ -31,11 +31,15 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
+
+# refresh the app when add, delete or update database
 def refresh():
     root.destroy()
     ui()
 
+# add to database from stock_window or user_profile or ui windows
 def add(name, description, place=None, window=None, change_password=False):
+    # "S" stands for stock_window func , "M" stands for ui func
     if window == "S" or window == "M":
         check = StockData("stock")
         list_stock = check.show()
@@ -48,6 +52,7 @@ def add(name, description, place=None, window=None, change_password=False):
                 stock = StockData("stock")
                 stock.save_information(name=name, description=description)
                 # Clear the fields
+                # "E" is for save_info func which doesn't return some msg boxes
                 if place == "E":
                     stock_des_entry.delete(0, END)
                     stock_name_entry.delete(0, END)
@@ -56,12 +61,14 @@ def add(name, description, place=None, window=None, change_password=False):
                 if place == "E":
                     messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
                 _refresh = False
+        
         else:
             messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
             if place == "E":
                 stock_name_entry.delete(0, END)
                 stock_des_entry.delete(0, END)
-                
+
+    # "U" is for user_profile func this will do almost the same thing as save_info             
     elif window == "U":                                  
         user = user_name_entry.get()
         pswd = user_pas_entry.get()
@@ -86,12 +93,14 @@ def add(name, description, place=None, window=None, change_password=False):
                 messagebox.showinfo(title="Success", message="اطلاعات کاربر با موفقیت تغییر یافت")
                 refresh()
 
+# delete from user_profile or stock_window window
 def delete(window):
+    # "S" : stock_window
     if window == "S":
         name = stock_name_entry.get()
         _stock = StockData("stock")
-        text = _stock.show_single_query(name=name)[0][0]
         try:
+            text = _stock.show_single_query(name=name)[0][0]
             yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
 
             if yes_no:
@@ -102,7 +111,10 @@ def delete(window):
                 ui()
         except TypeError:
             print("Primary key didn't specefied")
-   
+        except IndexError:
+            pass
+    
+    # "U" is for user_profile func<window>
     elif window == "U":
         user = user_name_entry.get()
         pswd_check = user_pas_entry.get()
@@ -116,13 +128,13 @@ def delete(window):
                 if pswd_check == text[0][1]:
                     _user.delete(username=user)
                     messagebox.showinfo(title="Success", message="کاربر با موفقیت حذف شد")
-                    root.destroy()
-                    ui()
+                    refresh()
                 else:
                     messagebox.showerror(title="Password Error", message="رمز درست وارد نشده است")    
         except TypeError:
             print("Primary key didn't specefied")
 
+# update stocks info from window_stock
 def update():
     name = stock_name_entry.get()
     description = stock_des_entry.get()
@@ -132,12 +144,11 @@ def update():
     master.destroy()
     stock_window()
     messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
-    root.destroy()
-    ui()
+    refresh()
 
+# making a new window for editing without opening toplevel or other window, by removing stuff
 def edit():
-    
-    def backward():
+    def backward():  # close the editing window
         master.destroy()
         stock_window()
     global name_stock
@@ -149,7 +160,6 @@ def edit():
         master.title("Update stock info")
         stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
         submit_btn.destroy()
-        # show_btn.destroy()
         del_btn.destroy()
         edit_btn.destroy()
 
@@ -257,7 +267,7 @@ def order(type):
                 threading.Thread(target=start_trading).start()
 
 
-# ***** #
+# hide password in main window<ui()> or user_profile window
 def hide(place):
     if place == "M":
         password_entry.config(show=bullet)
@@ -267,7 +277,7 @@ def hide(place):
         user_pas_entry.config(show=bullet)
         show_password.config(text="show", command=lambda: show(place))
 
-# show the password in main window and user window
+# show the password in main window<ui()> or user_profile window
 def show(place):
     if password_entry.get() != "" and place == "M":
         password_entry.config(show="")
@@ -277,8 +287,9 @@ def show(place):
         user_pas_entry.config(show="")
         show_password.config(text="hide", command=lambda: hide(place))
 
+# toplevel for our stock editing
 def stock_window():
-    def put_in(*args):
+    def put_in(*args):  # put stock name and stock description in fields dynamically
         stock_name = stock_name_combo.get()
         stock_init_des = StockData("stock")
         des = stock_init_des.show_single_query(name=stock_name)
@@ -306,6 +317,7 @@ def stock_window():
     stock_des_label = Label(stock_label, text="توضیحات", font=("Helvatica", 12))
     stock_des_label.grid(row=1, column=0, padx=(10, 0))
 
+    # combobox for out stocks
     global stock_name_combo
     stock_name_combo = StringVar()
     stock_name_combo.set("سهم را انتخاب کنید")
@@ -366,6 +378,7 @@ def user_profile():
     stock_des_label = Label(user_label, text="password", font=("Helvatica", 10, "italic"), fg="red")
     stock_des_label.grid(row=1, column=1, padx=(10, 0))
 
+    # combobox for usernames
     global user_name_combo
     user_name_combo = StringVar()
     user_name_combo.set(" Choose ...")
@@ -429,8 +442,8 @@ def save_info():
             messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
             _refresh = False
         
-    if stock != " ":
-        add(stock, description=None)
+    if stock != "":
+        add(stock, description=None, window="M")
     
     password_entry.delete(0, END)
     user_entry.set('')
@@ -553,15 +566,15 @@ def ui():
     save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black', command=save_info, width=10)
     save_btn.grid(row=11, column=2, padx=(0, 250))
 
+    # add menubar to our main window app
     menubar = Menu(root)
     tab = Menu(menubar, tearoff=0)
     tab.add_command(label="ویرایش نام کاربری   \U0001F464", command=user_profile)
     tab.add_command(label="ویرایش سهم   \U0001F58A", command=stock_window)
     tab.add_command(label="Refresh           \U0001F504", command=refresh)
     tab.add_command(label="Save info        \U0001F4BE", command=save_info)
-
     tab.add_separator()
-    tab.add_command(label="Exit           \U0000274C", command=lambda: root.destroy())
+    tab.add_command(label="Exit           \U0000274C", command=root.destroy)
    
     menubar.add_cascade(label="Edit", menu=tab)
     root.config(menu=menubar)

@@ -82,8 +82,7 @@ def delete(window):
                 # Remove from database
                 _stock.delete(name=name)
                 messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
-                root.destroy()
-                ui()
+                refresh()
         except TypeError:
             print("Primary key didn't specefied")
    

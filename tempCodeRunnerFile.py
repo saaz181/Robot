@@ -1,1 +1,1 @@
-change_password=False
+stock, description=None, window="M"

@@ -108,4 +108,3 @@ class StockData:
         self.con.commit()
         self.con.close()                       
             
-
