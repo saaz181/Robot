@@ -45,9 +45,13 @@ def add(name, description, place=None):
             stock.save_information(name=name, description=description)
             # Clear the fields
             if place == "E":
-                stock_name_entry.delete(0, END)
                 stock_des_entry.delete(0, END)
-        
+                stock_name_entry.delete(0, END)
+                messagebox.showinfo(title="Stock Add", message="اطلاعات سهم ذخیره شد")
+        else:
+            if place == "E":
+                messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
+            refresh = False
     else:
         messagebox.showinfo(title="Same Stock", message="این اطلاعت سهم موجود است")
         if place == "E":
@@ -74,46 +78,50 @@ def delete():
     name = stock_name_entry.get()
     _stock = StockData("stock")
     text = _stock.show_single_query(name=name)[0][0]
-    print(text)
     try:
-        yes_no =  messagebox.askokcancel(title="Delete Alert", message="Do you want to delete " 
-                                                                        + str(text))
+        yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
 
         if yes_no:
             # Remove from database
             _stock.delete(name=name)
-            stock_name_entry.delete(0, END)
             messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
+            root.destroy()
+            ui()
     except TypeError:
         print("Primary key didn't specefied")
 
 def update():
     name = stock_name_entry.get()
     description = stock_des_entry.get()
-    
-    stock_data.update(name=name, description=description)
+    stock_data = StockData('stock')
+    pk = stock_data.show_single_query(name=name_stock)[0][2]
+    stock_data.update(name=name, description=description, pk=pk)
     master.destroy()
     stock_window()
     messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
+    root.destroy()
+    ui()
 
 def edit():
+    
+    def backward():
+        master.destroy()
+        stock_window()
+    global name_stock
     name_stock = stock_name_entry.get()
-    global stock_data
     stock_data = StockData("stock")
     s_name = stock_data.show_single_query(name=name_stock)
-
+    
     if s_name != []: 
         master.title("Update stock info")
         stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
         submit_btn.destroy()
-        show_btn.destroy()
+        # show_btn.destroy()
         del_btn.destroy()
         edit_btn.destroy()
 
-        stock_name_entry.delete(0, END)
         _stocks = stock_data.show_single_query(name=name_stock)
         try:
-            stock_name_entry.insert(0, _stocks[0][0])
             if _stocks[0][1] != None:
                 stock_des_entry.insert(0, _stocks[0][1])
         except TypeError:
@@ -121,8 +129,12 @@ def edit():
 
         edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=update)
         edit_btn_1.grid(row=2, column=1, pady=10, padx=(0, 300))
+
+        edit_btn_2 = Button(stock_label, text='برگشت', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=backward)
+        edit_btn_2.grid(row=2, column=1, pady=10)
     else:
-        messagebox.showerror(title="Database Error", message="This query is empty")    
+        messagebox.showerror(title="Database Error", message="This query is empty")
+    
 
 # Using logging module to see what error did we encountered
 logging.basicConfig(filename=resource_path('robot.log'), filemode='a', 
@@ -215,21 +227,33 @@ def order(type):
 # ***** #
 # hiding the password entry
 def hide():
-    password_entry.config(show="*")
-    show_password_btn.config(text="show password", command=show)
+    password_entry.config(show=bullet)
+    show_password_btn.config(text="show", command=show)
 # showing the password entry
 def show():
     if password_entry.get() != "":
         password_entry.config(show="")
-        show_password_btn.config(text="hide password", command=hide)
+        show_password_btn.config(text="hide", command=hide)
 # ***** #
 
 def stock_window():
+    def put_in(*args):
+        stock_name = stock_name_combo.get()
+        stock_init_des = StockData("stock")
+        des = stock_init_des.show_single_query(name=stock_name)
+        if des[0][1] != None:
+            stock_des_entry.delete(0, END)
+            stock_des_entry.insert(0, des[0][1])
+        else:
+            stock_des_entry.delete(0, END)
+        stock_name_entry.delete(0, END)
+        stock_name_entry.insert(0, stock_name)
+    
     global master
     master = Toplevel(root)
     master.title("Add a Stock")
     master.iconbitmap(resource_path('bot.ico'))
-    master.geometry('400x180')
+    master.geometry('530x160')
     
     global stock_label
     stock_label = LabelFrame(master, text="اضافه کردن سهم", width=100)
@@ -240,6 +264,14 @@ def stock_window():
 
     stock_des_label = Label(stock_label, text="توضیحات", font=("Helvatica", 12))
     stock_des_label.grid(row=1, column=0, padx=(10, 0))
+
+    global stock_name_combo
+    stock_name_combo = StringVar()
+    stock_name_combo.set("سهم را انتخاب کنید")
+    stock_drop = ttk.Combobox(stock_label, textvariable=stock_name_combo, values=STOCKS, width=17, height=6)
+    stock_drop.grid(row=0, column=1, padx=(280, 0))
+    stock_drop.current()
+    stock_drop.bind("<<ComboboxSelected>>", put_in)
 
     global stock_name_entry
     stock_name_entry = Entry(stock_label)
@@ -253,11 +285,11 @@ def stock_window():
     submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E"), width=5)
     submit_btn.grid(row=2, column=1, pady=5, padx=(100, 0))
 
-    show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show_qs, width=5)
-    show_btn.grid(row=2, column=1, pady=5, padx=(100, 120))
+    # show_btn = Button(stock_label, text='نمایش', bg='green', font=("Helvatica", 10, 'bold'), fg='black', command=show_qs, width=5)
+    # show_btn.grid(row=2, column=1, pady=5, padx=(100, 120))
 
     del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete, width=5)
-    del_btn.grid(row=2, column=1, pady=5, padx=(40, 200))
+    del_btn.grid(row=2, column=1, pady=5, padx=(40, 140))
 
     edit_btn = Button(stock_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
     edit_btn.grid(row=2, column=1, pady=10, padx=(0, 300))
@@ -276,7 +308,8 @@ def save_info():
 
     users_list = [s[0] for s in list_users]
     pswds_list = [s[1] for s in list_users]
-    
+    global refresh
+    refresh = True
     # check if user not already saved and password isn't empty
     if user not in users_list and user != "" and pswd != "":
         user_create = StockData('user')
@@ -289,17 +322,22 @@ def save_info():
             change = messagebox.askokcancel(title="Change Info", message=f"میخواهید اطلاعات مربوط به {user} را تغییر دهید؟ ")
             if change:
                 user_update = StockData('user')
-                user_update.update(username=user, password=pswd)
+                user_update.update(username=user, password=pswd, pk=check_user_name[0][2])
                 messagebox.showinfo(title="Success", message="اطلاعات با موفقیت تغییر یافت")
 
         else:
             messagebox.showinfo(title="Same user", message="این نام کاربری قبلا ذخیره شده است")
+            refresh = False
         
-    add(stock, description=None)
+    if stock != " ":
+        add(stock, description=None)
     
     password_entry.delete(0, END)
     user_entry.set('')
     stock_entry.set('')
+    if refresh:
+        root.destroy()
+        ui()
 
 # will fill the password field with related username
 def auto_complete(*args):
@@ -312,6 +350,10 @@ def auto_complete(*args):
 
 # our GUI function which runs separately from TRADEs functions
 def ui():
+    def refresh():
+        root.destroy()
+        ui()
+    
     global root
     root = Tk()
     root.title("Stock Bot")
@@ -335,42 +377,43 @@ def ui():
     password_label = Label(root, text="password", font=("Helvatica", 10), fg='red')
     password_label.grid(row=2, column=1)
 
-    global password_entry
-    password_entry = Entry(root, show="*")
+    global password_entry, bullet
+    bullet = "\u2022"
+    password_entry = Entry(root, show=bullet, justify=CENTER)
     password_entry.grid(row=2, column=2, padx=70)
 
     global show_password_btn 
-    show_password_btn = Button(root, text="show password", relief=SUNKEN, bd=0, fg="blue", command=show)
-    show_password_btn.grid(row=2, column=2, padx=(0, 250))
+    show_password_btn = Button(root, text="show", relief=SUNKEN, bd=0, fg="blue", command=show)
+    show_password_btn.grid(row=2, column=2, padx=(0, 200))
 
     stock_label = Label(root, text="نماد سهم", font=("Helvatica", 10))
     stock_label.grid(row=3, column=1, pady=10)
 
+    global stock_entry, STOCKS    
     _stocks = StockData("stock")  # connecting to stocks table
     STOCKS = [s[0] for s in _stocks.show()]
-    global stock_entry
-    
+
     stock_entry = StringVar()
     stock_entry.set("")    
-    stock_drop = ttk.Combobox(root, textvariable=stock_entry, values=STOCKS, width=17, height=8)
+    stock_drop = ttk.Combobox(root, textvariable=stock_entry, values=STOCKS, width=17, height=6)
     stock_drop.grid(row=3, column=2)
     stock_drop.current()
     
-    stock_description = Button(root, text='Edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
+    stock_description = Button(root, text='edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
     stock_description.grid(row=3, column=2, padx=(0, 200))
 
     stock_price_label = Label(root, text="قیمت سهم (ريال)", font=("Helvatica", 10))
     stock_price_label.grid(row=4, column=1, pady=10)
 
     global stock_price_entry
-    stock_price_entry = Entry(root)
+    stock_price_entry = Entry(root, justify=CENTER)
     stock_price_entry.grid(row=4, column=2, padx=70)
 
     stock_quantity_label = Label(root, text="تعداد", font=("Helvatica", 10))
     stock_quantity_label.grid(row=5, column=1, pady=10)
 
     global stock_quantity_entry
-    stock_quantity_entry = Entry(root)
+    stock_quantity_entry = Entry(root, justify=CENTER)
     stock_quantity_entry.grid(row=5, column=2, padx=70)
 
     guid = Label(root, text="زمان را به صورت 01:10:03 وارد کنید", font=("Helvatica", 10, 'bold'), fg="red")
@@ -380,14 +423,14 @@ def ui():
     start_time_label.grid(row=7, column=1, pady=10)
 
     global start_time_entry
-    start_time_entry = Entry(root)
+    start_time_entry = Entry(root, justify=CENTER)
     start_time_entry.grid(row=7, column=2, padx=70)
 
     end_time_label = Label(root, text="ساعت پایان", font=("Helvatica", 10))
     end_time_label.grid(row=8, column=1, pady=10)
 
     global end_time_entry
-    end_time_entry = Entry(root)
+    end_time_entry = Entry(root, justify=CENTER)
     end_time_entry.grid(row=8, column=2, padx=70)
 
     delay_between_order_label = Label(root, text="فاصله بین  هر سفارش (میلی ثانیه)", fg="red")
@@ -413,6 +456,18 @@ def ui():
     save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black', command=save_info, width=10)
     save_btn.grid(row=11, column=2, padx=(0, 250))
 
+    menubar = Menu(root)
+    tab = Menu(menubar, tearoff=0)
+    tab.add_command(label="ویرایش سهم   \U0001F58A", command=stock_window)
+    tab.add_command(label="ویرایش نام کاربری   \U0001F464")
+    tab.add_command(label="Refresh           \U0001F504", command=refresh)
+    tab.add_command(label="Save info        \U0001F4BE", command=save_info)
+
+    tab.add_separator()
+    tab.add_command(label="Exit           \U0000274C", command=lambda: root.destroy())
+   
+    menubar.add_cascade(label="Edit", menu=tab)
+    root.config(menu=menubar)
 
     root.mainloop()
 
