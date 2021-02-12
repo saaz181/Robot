@@ -1,1 +1,0 @@
-stock, description=None, window="M"

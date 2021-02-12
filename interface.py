@@ -6,6 +6,7 @@ from time import sleep
 from tkinter import messagebox
 from data import StockData
 from tkinter import ttk
+import threading
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -449,18 +450,20 @@ def ui():
     save_btn.grid(row=10, column=1, padx=(0, 250))
 
     menubar = Menu(root)
-    tab = Menu(menubar, tearoff=0)
-    tab.add_command(label="ویرایش نام کاربری   \U0001F464", command=user_profile)
-    tab.add_command(label="ویرایش سهم    \U0001F58A", command=stock_window)
-    tab.add_command(label="Refresh           \U0001F504", command=refresh)
-    tab.add_command(label="Save info        \U0001F4BE", command=save_info)
-
-    tab.add_separator()
-    tab.add_command(label="Exit                 \U0000274C", command=lambda: root.destroy())
-   
-    menubar.add_cascade(label="Edit", menu=tab)
-    root.config(menu=menubar)
     
+    _file = Menu(menubar, tearoff=0)
+    _file.add_command(label="Refresh           \U0001F504", command=refresh)
+    _file.add_command(label="Save info        \U0001F4BE", command=save_info)
+    _file.add_separator()
+    _file.add_command(label="Exit                 \U0000274C", command=lambda: root.destroy())
+    menubar.add_cascade(label="File", menu=_file)
+
+    tab = Menu(menubar, tearoff=0)
+    tab.add_command(label="ویرایش نام کاربری   \U0001F464", command=lambda: threading.Thread(target=user_profile).start())
+    tab.add_command(label="ویرایش سهم    \U0001F58A", command=lambda: threading.Thread(target=stock_window).start())
+    menubar.add_cascade(label="Edit", menu=tab)
+    
+    root.config(menu=menubar)
     root.mainloop()
 
 ui()

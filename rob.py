@@ -1,15 +1,18 @@
-from selenium import webdriver
-from time import sleep
-from selenium.webdriver.common.keys import Keys
-from selenium.common.exceptions import ElementNotInteractableException, NoSuchElementException, NoSuchWindowException
 import datetime as dt
 import logging
-from tkinter import *
-from tkinter import messagebox
-from tkinter import ttk
-import sys
 import os
+import sys
 import threading
+from time import sleep
+from tkinter import *
+from tkinter import messagebox, ttk
+
+from selenium import webdriver
+from selenium.common.exceptions import (ElementNotInteractableException,
+                                        NoSuchElementException,
+                                        NoSuchWindowException)
+from selenium.webdriver.common.keys import Keys
+
 from data import StockData
 
 """
@@ -304,6 +307,7 @@ def stock_window():
     global master
     master = Toplevel(root)
     master.title("Add a Stock")
+    master.resizable(False, False)
     master.iconbitmap(resource_path('bot.ico'))
     master.geometry('530x160')
     
@@ -362,6 +366,7 @@ def user_profile():
     
     main = Toplevel(root)
     main.title("User Profile")
+    main.resizable(False, False)
     main.iconbitmap(resource_path('bot.ico'))
     main.geometry("560x220")
 
@@ -568,15 +573,18 @@ def ui():
 
     # add menubar to our main window app
     menubar = Menu(root)
-    tab = Menu(menubar, tearoff=0)
-    tab.add_command(label="ویرایش نام کاربری   \U0001F464", command=user_profile)
-    tab.add_command(label="ویرایش سهم   \U0001F58A", command=stock_window)
-    tab.add_command(label="Refresh           \U0001F504", command=refresh)
-    tab.add_command(label="Save info        \U0001F4BE", command=save_info)
-    tab.add_separator()
-    tab.add_command(label="Exit           \U0000274C", command=root.destroy)
-   
-    menubar.add_cascade(label="Edit", menu=tab)
+    _file_ = Menu(menubar, tearoff=0)
+    _file_.add_command(label="Refresh           \U0001F504", command=refresh)
+    _file_.add_command(label="Save info        \U0001F4BE", command=save_info)
+    _file_.add_separator()
+    _file_.add_command(label="Exit                 \U0000274C", command=lambda: root.destroy())
+    menubar.add_cascade(label="File", menu=_file_)
+
+    _tab_ = Menu(menubar, tearoff=0)
+    _tab_.add_command(label="ویرایش نام کاربری   \U0001F464", command=lambda: threading.Thread(target=user_profile).start())
+    _tab_.add_command(label="ویرایش سهم    \U0001F58A", command=lambda: threading.Thread(target=stock_window).start())
+    menubar.add_cascade(label="Edit", menu=_tab_)
+    
     root.config(menu=menubar)
 
     root.mainloop()
@@ -768,3 +776,4 @@ def start_trading():
 if __name__ == '__main__':
     # Calling the GUI function to start all the functions
     ui()
+
