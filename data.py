@@ -10,20 +10,37 @@ class StockData:
         if self.table == "user":
             self.cursor.execute("""
                 CREATE TABLE IF NOT EXISTS users (
-                    user_name VARCHAR(255),
-                    user_password VARCHAR(255)
+                    user_name VARCHAR(30),
+                    user_password VARCHAR(30)
                 )
                 """)
 
         elif self.table == "stock":
             self.cursor.execute("""
             CREATE TABLE IF NOT EXISTS stocks (
-                name VARCHAR(255),
-                description VARCHAR(255)
+                name VARCHAR(20),
+                description VARCHAR(30)
             )
             """)
+
+        elif self.table == "record":
+            self.cursor.execute("""
+                CREATE TABLE IF NOT EXISTS records (
+                    username VARCHAR(30),
+                    stock_name VARCHAR(20),
+                    quantity INT,
+                    stock_price INT,
+                    trade_type VARCHAR(1),
+                    trade_date DATE,
+                    trade_time INT,
+                    start_time INT,
+                    end_time INT,
+                    FOREIGN KEY (username) REFERENCES users(user_name) ON DELETE SET NULL
+                )
+            """) 
         
-    def save_information(self, username=None, password=None, name=None, description=None):
+    def save_information(self, username=None, password=None, name=None, description=None, quantity=0, stock_price=0, 
+                                trade_type=None, trade_date=None, trade_time=None, start_time=None, end_time=None):
         if self.table == "stock":
             if name != None:
                 self.cursor.execute("INSERT INTO stocks VALUES (:s_name, :s_description)", 
@@ -41,6 +58,24 @@ class StockData:
                 }) 
             else:
                 messagebox.showerror(title="Empty field", message="نام کاربری یا پسورد وارد نشده است")
+
+        elif self.table == "record":
+            self.cursor.execute("INSERT INTO records VALUES (:_username, :_stock_name, :_quantity, \
+                                                            :_stock_price, :_trade_type, :_trade_date, \
+                                                            :_trade_time, :_start_time, :_end_time)",
+                                {
+                                    '_username': username,
+                                    '_stock_name': name,
+                                    '_quantity': quantity,
+                                    '_stock_price': stock_price,
+                                    '_trade_type': trade_type,
+                                    '_trade_date': trade_date,
+                                    '_trade_time': trade_time,
+                                    '_start_time': start_time,
+                                    '_end_time': end_time
+
+                                })
+
         self.con.commit()
         self.con.close()
 
@@ -56,6 +91,12 @@ class StockData:
             self.user_pass = self.cursor.fetchall()
             
             return self.user_pass
+
+        elif self.table == "record":
+            self.cursor.execute("SELECT *, oid FROM records")
+            self.records = self.cursor.fetchall()
+
+            return self.records
 
         self.con.commit()
         self.con.close()
@@ -81,15 +122,32 @@ class StockData:
             except sqlite3.OperationalError:
                 messagebox.showerror(title="Stock Pk", message="You haven't spcefied any primary key")
         
+        elif self.table == "record":
+            try:
+                self.cursor.execute(f"SELECT *, oid FROM records WHERE username = '{username}'")
+                self.single_user_record = self.cursor.fetchall()
+                self.con.commit()
+
+                return self.single_user_record
+            except sqlite3.OperationalError:
+                messagebox.showerror(title="Stock Pk", message="You haven't spcefied any primary key")        
+
         self.con.close()
 
-    def delete(self, name=None, username=None):
+
+    def delete(self, name=None, username=None, pk=None):
         if self.table == "stock":
             self.cursor.execute(f"DELETE FROM stocks WHERE name = '{name}'")
-        
+            
         elif self.table == "user":
             self.cursor.execute(f"DELETE FROM users WHERE user_name = '{username}'")
-       
+
+        elif self.table == "record":
+            if username:
+                self.cursor.execute(f"DELETE FROM records WHERE username = '{username}'")
+            elif pk:
+                self.cursor.execute(f"DELETE FROM records WHERE oid = '{pk}'")                
+
         self.con.commit()
         self.con.close()
        
@@ -105,6 +163,12 @@ class StockData:
                 '_user': username,
                 '_password': password
             })
+
+        # TODO: we may probably wants to create update
+
         self.con.commit()
         self.con.close()                       
-            
+
+
+
+

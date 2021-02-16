@@ -25,7 +25,6 @@ ALGORITHM:
     2 - when we bought/sold the stock the bot should break out or goto other stock
     3 - we must make sure that as the bot buys/sells the stock doesn't buy/sell it again
         (which in this program isn't necessary)
-    
 """
 
 
@@ -35,10 +34,12 @@ def resource_path(relative_path):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
 
+
 # refresh the app when add, delete or update database
 def refresh():
     root.destroy()
     ui()
+
 
 # add to database from stock_window or user_profile or ui windows
 def add(name, description, place=None, window=None, change_password=False):
@@ -62,7 +63,8 @@ def add(name, description, place=None, window=None, change_password=False):
                     messagebox.showinfo(title="Stock Add", message="اطلاعات سهم ذخیره شد")
             else:
                 if place == "E":
-                    messagebox.showinfo(title="Add to Stocks", message="You need to at least enter a name for your stock")
+                    messagebox.showinfo(title="Add to Stocks",
+                                        message="You need to at least enter a name for your stock")
                 _refresh = False
         
         else:
@@ -86,7 +88,8 @@ def add(name, description, place=None, window=None, change_password=False):
             refresh()
         
         elif (user in users_list or change_password) and pswd != "" and user != "":
-            want_to_change = messagebox.askokcancel(title="Update Info", message=f"آیا میخواهید اطلاعات مربوط به {user} را تغییر دهید؟")
+            want_to_change = messagebox.askokcancel(title="Update Info",
+                                                    message=f"آیا میخواهید اطلاعات مربوط به {user} را تغییر دهید؟")
             if want_to_change:
                 user_qs = StockData("user")
                 pk = user_qs.show_single_query(username=user)[0][2]
@@ -96,6 +99,7 @@ def add(name, description, place=None, window=None, change_password=False):
                 messagebox.showinfo(title="Success", message="اطلاعات کاربر با موفقیت تغییر یافت")
                 refresh()
 
+
 # delete from user_profile or stock_window window
 def delete(window):
     # "S" : stock_window
@@ -104,7 +108,7 @@ def delete(window):
         _stock = StockData("stock")
         try:
             text = _stock.show_single_query(name=name)[0][0]
-            yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
+            yes_no = messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف {text} مطمئن هستید؟")
 
             if yes_no:
                 # Remove from database
@@ -112,6 +116,7 @@ def delete(window):
                 messagebox.showinfo(title="Success", message="سهم با موفقیت حذف شد")
                 root.destroy()
                 ui()
+        
         except TypeError:
             print("Primary key didn't specefied")
         except IndexError:
@@ -124,7 +129,7 @@ def delete(window):
         _user = StockData("user")
         text = _user.show_single_query(username=user)
         try:
-            yes_no =  messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف کاربر {text[0][0]} مطمئن هستید؟")
+            yes_no = messagebox.askokcancel(title="Delete Alert", message=f"آیا از حذف کاربر {text[0][0]} مطمئن هستید؟")
 
             if yes_no:
                 # Remove from database
@@ -134,8 +139,10 @@ def delete(window):
                     refresh()
                 else:
                     messagebox.showerror(title="Password Error", message="رمز درست وارد نشده است")    
+        
         except TypeError:
             print("Primary key didn't specefied")
+
 
 # update stocks info from window_stock
 def update():
@@ -149,6 +156,7 @@ def update():
     messagebox.showinfo(title="Change Success", message="تغییرات با موفقیت اعمال شد")
     refresh()
 
+
 # making a new window for editing without opening toplevel or other window, by removing stuff
 def edit():
     def backward():  # close the editing window
@@ -159,7 +167,7 @@ def edit():
     stock_data = StockData("stock")
     s_name = stock_data.show_single_query(name=name_stock)
     
-    if s_name != []: 
+    if s_name:
         master.title("Update stock info")
         stock_label.config(text="ویرایش اطلاعات سهم", fg="green")
         submit_btn.destroy()
@@ -173,10 +181,12 @@ def edit():
         except TypeError:
             print("Primary key didn't specefied")    
 
-        edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=update)
+        edit_btn_1 = Button(stock_label, text='ثبت ویرایش', bg='yellow',
+                            font=("Helvatica", 10, 'bold'), fg='black', command=update)
         edit_btn_1.grid(row=2, column=1, pady=10, padx=(0, 300))
 
-        edit_btn_2 = Button(stock_label, text='برگشت', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=backward)
+        edit_btn_2 = Button(stock_label, text='برگشت', bg='red',
+                            font=("Helvatica", 10, 'bold'), fg='black', command=backward)
         edit_btn_2.grid(row=2, column=1, pady=10)
     else:
         messagebox.showerror(title="Database Error", message="This query is empty")
@@ -186,16 +196,19 @@ def edit():
 logging.basicConfig(filename=resource_path('robot.log'), filemode='a', 
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
+
 # Clear price, quantity and total price
 def clear():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
     cost_label.configure(text="0")
 
+
 # Clear price & quantity
 def clear_all():
     stock_price_entry.delete(0, END)
     stock_quantity_entry.delete(0, END)
+
 
 # our buy button "green one"
 def order(type):
@@ -213,6 +226,11 @@ def order(type):
         messagebox.showerror(title="Base 10 Error", message="لطفا اعداد را به صورت صحیح و غیر اعشاری وارد کنید")
     trade_type = type  # specifying the type of our trade which is BUY
 
+    # Saving data of our our order to our records table in stocks.db
+    save_record = StockData('record')
+    save_record.save_information(username=username, name=stock, quantity=stock_quantity, 
+                                stock_price=stock_price, trade_type=trade_type, trade_date=dt.datetime.today().strftime("%Y-%m-%d"),
+                                trade_time=dt.datetime.today().strftime("%H:%M:%S")  ,start_time=start_time, end_time=end_time)
     type_value = {"s": 'فروش', "b": "خرید"}
 
     if username == '' or password == '' or stock == '' or stock_price == ''\
@@ -248,11 +266,11 @@ def order(type):
                     pass_ten_base = messagebox.askyesno(title="Price Error",
                                                         message="قیمت باید مضربی از 10 باشد میخواهید ادامه دهید")
                     if pass_ten_base:
-                            proceed = True
+                        proceed = True
 
                 # we can't order buy under 5,000,000 RIALS
-                if (trade_type == "b"):
-                    if (int(stock_price) * int(stock_quantity) < 5000000):
+                if trade_type == "b":
+                    if int(stock_price) * int(stock_quantity) < 5000000:
                         messagebox.showerror(title="Underprice", message="خرید کمتر از 5,000,000 ريال ممکن نیست")
                         clear()
                         proceed = False
@@ -280,6 +298,7 @@ def hide(place):
         user_pas_entry.config(show=bullet)
         show_password.config(text="show", command=lambda: show(place))
 
+
 # show the password in main window<ui()> or user_profile window
 def show(place):
     if password_entry.get() != "" and place == "M":
@@ -290,13 +309,124 @@ def show(place):
         user_pas_entry.config(show="")
         show_password.config(text="hide", command=lambda: hide(place))
 
+# Record view
+def record_history():
+    new = Toplevel(root)
+    new.title("RECORDS OF ORDERS")    
+    new.geometry("1000x400")
+    new.resizable(False, False)
+    new.iconbitmap(resource_path('bot.ico'))
+
+    style = ttk.Style()
+    # style.theme_use("clam")
+    # configure our treeview color
+    style.configure("Treeview", 
+                    background="white", 
+                    foreground="black",
+                    rowheight=25,
+                    fieldbackground="white")
+    style.map("Treeview", 
+                background=[("selected", "#4d4d4d")])
+ 
+    record_tree_frame = Frame(new)
+    record_tree_frame.grid(row=0, column=1, pady=10)
+    
+    record_scroll = Scrollbar(record_tree_frame)
+    record_scroll.pack(side=RIGHT, fill=Y)
+
+    record_tree = ttk.Treeview(record_tree_frame, yscrollcommand=record_scroll.set)
+    record_tree.pack(fill='both')
+
+    # Define our columns
+    record_scroll.config(command=record_tree.yview)
+    record_tree['columns'] = ('username', "stock's name", 'quantity', "stock's price", 'trade-type', 
+                                'trade-date', 'trade-time','start-time', 'end-time')
+
+    # Format our columns
+    record_tree.column("#0", width=60, minwidth=10, anchor=W)
+    record_tree.column("username", width=120, minwidth=80, anchor=CENTER)                            
+    record_tree.column("stock's name", width=80, minwidth=80, anchor=CENTER)                            
+    record_tree.column("quantity", width=80, minwidth=30, anchor=CENTER)
+    record_tree.column("stock's price", width=80, minwidth=30, anchor=CENTER)
+    record_tree.column("trade-type", width=80, minwidth=10, anchor=CENTER)
+    record_tree.column("trade-date", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("trade-time", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("start-time", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("end-time", width=120, minwidth=20, anchor=CENTER)
+
+    # Create Heading
+    record_tree.heading("#0", text="ID", anchor=CENTER)
+    record_tree.heading("username", text="username", anchor=CENTER)
+    record_tree.heading("stock's name", text="نام سهم", anchor=CENTER)
+    record_tree.heading("quantity", text="تعداد", anchor=CENTER)
+    record_tree.heading("stock's price", text="قیمت", anchor=CENTER)
+    record_tree.heading("trade-type", text="نوع معامله", anchor=CENTER)
+    record_tree.heading("trade-date", text="تاریخ معامله", anchor=CENTER)
+    record_tree.heading("trade-time", text="زمان سفارش", anchor=CENTER)
+    record_tree.heading("start-time", text="زمان شروع", anchor=CENTER)
+    record_tree.heading("end-time", text="زمان پایان", anchor=CENTER)
+
+    trade_type = {"B": "خرید", 
+                  "S": "فروش",
+                  "b": "خرید", 
+                  "s": "فروش"}
+
+    record_tree.tag_configure("buy", background="#00cc00")
+    record_tree.tag_configure("sell", background="#ff4d4d")
+
+    count = 0
+    records = StockData('record')
+    for record in records.show():
+        if record[4] == 'B' or record[4] == 'b':
+            color_type = "buy",
+        else:
+            color_type = "sell"
+
+        record_tree.insert(parent="", index="end", iid=count, text=record[9], values=(record[0], record[1], record[2], 
+                                                                                        record[3], trade_type[record[4]],
+                                                                                        record[5], record[6], record[7], 
+                                                                                        record[8]),
+                                                                                        tags=(color_type,))
+        count += 1                                                                            
+
+        def remove_many(event):
+            x = record_tree.selection()
+            _x = [int(record_tree.item(i)['text']) for i in x]
+            for pk in _x:
+                delete_record = StockData('record')
+                delete_record.delete(pk=pk)
+
+            for _record in x:
+                record_tree.delete(_record)
+
+        def up():
+            rows = record_tree.selection()
+            for row in rows:
+                record_tree.move(row, record_tree.parent(row), record_tree.index(row)-1)
+
+        def down():
+            rows = record_tree.selection()
+            for row in reversed(rows):
+                record_tree.move(row, record_tree.parent(row), record_tree.index(row)+1)
+
+
+        remove_button = Button(new, text="حذف", bg='#ff0000', fg="black", font=("Helvatica", 13), command=lambda: remove_many(0), width=20)
+        remove_button.grid(row=3, column=1)
+        record_tree.bind("<Delete>", remove_many)
+
+        move_up = Button(new, text="\U0001F815", font=10, command=up)
+        move_up.grid(row=3, column=1, padx=(300, 0))        
+
+        move_down = Button(new, text="\U0001F817", font=10, command=down)
+        move_down.grid(row=3, column=1, padx=(0, 300))
+
 # toplevel for our stock editing
 def stock_window():
     def put_in(*args):  # put stock name and stock description in fields dynamically
         stock_name = stock_name_combo.get()
         stock_init_des = StockData("stock")
         des = stock_init_des.show_single_query(name=stock_name)
-        if des[0][1] != None:
+        if des[0][1] is not None:
             stock_des_entry.delete(0, END)
             stock_des_entry.insert(0, des[0][1])
         else:
@@ -339,14 +469,16 @@ def stock_window():
     stock_des_entry.grid(row=1, column=1, padx=70)
 
     global submit_btn, show_btn, del_btn, edit_btn
-    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E", window="S"), width=5)
+    submit_btn = Button(stock_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', width=5,
+                        command=lambda: add(stock_name_entry.get(), stock_des_entry.get(), place="E", window="S"))
     submit_btn.grid(row=2, column=1, pady=5, padx=(100, 0))
 
-    
-    del_btn = Button(stock_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=delete("S"), width=5)
+    del_btn = Button(stock_label, text='حذف', bg='red',
+                     font=("Helvatica", 10, 'bold'), fg='black', command=delete("S"), width=5)
     del_btn.grid(row=2, column=1, pady=5, padx=(40, 140))
 
-    edit_btn = Button(stock_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
+    edit_btn = Button(stock_label, text='ویرایش', bg='yellow',
+                      font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
     edit_btn.grid(row=2, column=1, pady=10, padx=(0, 300))
 
 
@@ -362,8 +494,7 @@ def user_profile():
 
         user_pas_entry.delete(0, END)
         user_pas_entry.insert(0, user_data[0][1])
-        
-    
+
     main = Toplevel(root)
     main.title("User Profile")
     main.resizable(False, False)
@@ -374,7 +505,7 @@ def user_profile():
     user_label = LabelFrame(main, text="تغییر نام کاربری", width=100)
     user_label.grid(row=0, column=1, padx=30, ipady=8, ipadx=5)
 
-    user_name_emoji = Label(user_label, text="\U0001F464", font=("Helvatica", 50, "bold"), bg="grey", fg="white")
+    user_name_emoji = Label(user_label, text="", font=("Helvatica", 50, "bold"), bg="grey", fg="white")
     user_name_emoji.grid(row=0, column=0, pady=10, padx=(10, 0))
 
     stock_name_label = Label(user_label, text="username", font=("Helvatica", 10, "italic"), fg="red")
@@ -404,21 +535,25 @@ def user_profile():
     show_password = Button(user_label, text="show", relief=SUNKEN, bd=0, fg="blue", command=lambda: show("U"))
     show_password.grid(row=1, column=2, padx=(100, 0))
 
-    add_btn = Button(user_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U"), width=5)
+    add_btn = Button(user_label, text='افزودن', bg='orange', font=("Helvatica", 10, 'bold'), fg='black',
+                     command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U"), width=5)
     add_btn.grid(row=2, column=2, pady=5, padx=(100, 0))
 
-    delete_btn = Button(user_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: delete("U"), width=5)
+    delete_btn = Button(user_label, text='حذف', bg='red', font=("Helvatica", 10, 'bold'), fg='black',
+                        command=lambda: delete("U"), width=5)
     delete_btn.grid(row=2, column=2, pady=5, padx=(40, 140))
 
-    edit_pswd_btn = Button(user_label, text='ویرایش رمز', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=lambda: add(user_name_entry.get(), user_pas_entry.get(), window="U", change_password=True), width=8)
+    edit_pswd_btn = Button(user_label, text='ویرایش رمز', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black',
+                           command=lambda: add(user_name_entry.get(), user_pas_entry.get(),
+                                               window="U", change_password=True), width=8)
     edit_pswd_btn.grid(row=2, column=2, pady=10, padx=(0, 300))
 
 
 # saving the username and password and the stock's name into database
 def save_info():
-    user = user_entry.get() # getting username combo value
+    user = user_entry.get()  # getting username combo value
     pswd = password_entry.get()  # getting password combo value
-    stock = str(stock_entry.get()) # getting stock combo value
+    stock = str(stock_entry.get())  # getting stock combo value
 
     check_user = StockData("user")  # connect to database
     
@@ -437,7 +572,8 @@ def save_info():
         user_check = StockData('user')
         check_user_name = user_check.show_single_query(username=user)
         if check_user_name[0][0] != user or check_user_name[0][1] != pswd:
-            change = messagebox.askokcancel(title="Change Info", message=f"میخواهید اطلاعات مربوط به {user} را تغییر دهید؟ ")
+            change = messagebox.askokcancel(title="Change Info",
+                                            message=f"میخواهید اطلاعات مربوط به {user} را تغییر دهید؟ ")
             if change:
                 user_update = StockData('user')
                 user_update.update(username=user, password=pswd, pk=check_user_name[0][2])
@@ -456,6 +592,7 @@ def save_info():
     if _refresh:
         root.destroy()
         ui()
+
 
 # will fill the password field with related username
 def auto_complete(*args):
@@ -478,7 +615,6 @@ def ui():
     user_label = Label(root, text="username", font=("Helvatica", 10), fg='red')
     user_label.grid(row=1, column=1, padx=50, pady=15)
 
-    
     global user_entry, user_info
     user_entry = StringVar()
     _users = StockData('user')  # connecting to users table
@@ -514,7 +650,8 @@ def ui():
     stock_drop.grid(row=3, column=2)
     stock_drop.current()
     
-    stock_description = Button(root, text='edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,command=stock_window, bd=0, cursor="hand2")
+    stock_description = Button(root, text='edit', font=("Helvatica", 10), fg='green', relief=SUNKEN,
+                               command=stock_window, bd=0, cursor="hand2")
     stock_description.grid(row=3, column=2, padx=(0, 200))
 
     stock_price_label = Label(root, text="قیمت سهم (ريال)", font=("Helvatica", 10))
@@ -562,13 +699,16 @@ def ui():
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
     cost_label_text.grid(row=10, column=1)
 
-    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('b'), width=5)
+    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black',
+                     command=lambda: order('b'), width=5)
     buy_btn.grid(row=11, column=1, pady=10)
 
-    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
+    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black',
+                      command=lambda: order('s'), width=5)
     sell_btn.grid(row=11, column=2)
 
-    save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black', command=save_info, width=10)
+    save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black',
+                      command=save_info, width=10)
     save_btn.grid(row=11, column=2, padx=(0, 250))
 
     # add menubar to our main window app
@@ -576,13 +716,14 @@ def ui():
     _file_ = Menu(menubar, tearoff=0)
     _file_.add_command(label="Refresh           \U0001F504", command=refresh)
     _file_.add_command(label="Save info        \U0001F4BE", command=save_info)
+    _file_.add_command(label="Records          \U0000241E", command=record_history)
     _file_.add_separator()
-    _file_.add_command(label="Exit                 \U0000274C", command=lambda: root.destroy())
+    _file_.add_command(label="Exit ", command=lambda: root.destroy())
     menubar.add_cascade(label="File", menu=_file_)
 
     _tab_ = Menu(menubar, tearoff=0)
-    _tab_.add_command(label="ویرایش نام کاربری   \U0001F464", command=lambda: threading.Thread(target=user_profile).start())
-    _tab_.add_command(label="ویرایش سهم    \U0001F58A", command=lambda: threading.Thread(target=stock_window).start())
+    _tab_.add_command(label="ویرایش نام کاربری", command=lambda: threading.Thread(target=user_profile).start())
+    _tab_.add_command(label="ویرایش سهم", command=lambda: threading.Thread(target=stock_window).start())
     menubar.add_cascade(label="Edit", menu=_tab_)
     
     root.config(menu=menubar)
@@ -733,21 +874,19 @@ def robot_trade(trade_time):
             _quit = False
 
         except:
-                # Getting time from website we crawling
-                now_time = driver.find_element_by_xpath(
-                    '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/'
-                    'widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
+            # Getting time from website we crawling
+            now_time = driver.find_element_by_xpath(
+                '/html/body/app-container/app-content/div/div/div/div[3]/div[2]/div/div/'
+                'widget/div/div/div/div[2]/send-order/div/div[7]/div[2]/div[2]/clock')
 
-                # Convert into 12h clock
-                current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S").strftime("%I:%M:%S")
-
-                length = (end_time - dt.datetime.strptime(current_time, "%H:%M:%S")).seconds
-                robot_trade(length)
+            # Convert into 12h clock
+            current_time = dt.datetime.strptime(now_time.text, "%H:%M:%S").strftime("%I:%M:%S")
+            length = (end_time - dt.datetime.strptime(current_time, "%H:%M:%S")).seconds
+            robot_trade(length)
 
     if _quit:
         driver.quit()
     messagebox.showinfo(title="success", message="Trade completed")
-
 # *** end of our main function of program ***
 
 
@@ -776,4 +915,3 @@ def start_trading():
 if __name__ == '__main__':
     # Calling the GUI function to start all the functions
     ui()
-

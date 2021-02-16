@@ -7,6 +7,7 @@ from tkinter import messagebox
 from data import StockData
 from tkinter import ttk
 import threading
+import datetime as dt
 
 def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
@@ -16,6 +17,27 @@ def resource_path(relative_path):
 def refresh():
     root.destroy()
     ui()
+
+def order(_type):
+    username = var_user.get()
+    stock = var.get()
+    price = stock_price_entry.get()
+    quantity = stock_quantity_entry.get()
+    start_time = start_time_entry.get()
+    end_time = end_time_entry.get()
+    trade_type = _type
+
+    save_record = StockData('record')
+    save_record.save_information(username=username, name=stock, quantity=quantity, 
+                                stock_price=price, trade_type=trade_type, trade_date=dt.datetime.today().strftime("%Y-%m-%d"),
+                                trade_time=dt.datetime.today().strftime("%H:%M:%S")  ,start_time=start_time, end_time=end_time)
+    
+    stock_price_entry.delete(0, END)
+    stock_quantity_entry.delete(0, END)
+    start_time_entry.delete(0, END)
+    end_time_entry.delete(0, END)
+    
+
 
 # For stock
 def add(name, description, place=None, window=None, change_password=False):
@@ -211,6 +233,116 @@ def stock_window():
 
     edit_btn = Button(stock_label, text='ویرایش', bg='yellow', font=("Helvatica", 10, 'bold'), fg='black', command=edit, width=5)
     edit_btn.grid(row=2, column=1, pady=10, padx=(0, 300))
+
+
+def record_history():
+    new = Toplevel(root)
+    new.title("RECORDS OF ORDERS")    
+    new.geometry("1000x400")
+    new.resizable(False, False)
+    new.iconbitmap(resource_path('bot.ico'))
+
+    style = ttk.Style()
+    # style.theme_use("clam")
+    # configure our treeview color
+    style.configure("Treeview", 
+                    background="white", 
+                    foreground="black",
+                    rowheight=25,
+                    fieldbackground="white")
+    style.map("Treeview", 
+                background=[("selected", "#4d4d4d")])
+ 
+    record_tree_frame = Frame(new)
+    record_tree_frame.grid(row=0, column=1, pady=10)
+    
+    record_scroll = Scrollbar(record_tree_frame)
+    record_scroll.pack(side=RIGHT, fill=Y)
+
+    record_tree = ttk.Treeview(record_tree_frame, yscrollcommand=record_scroll.set)
+    record_tree.pack(fill='both')
+
+    # Define our columns
+    record_scroll.config(command=record_tree.yview)
+    record_tree['columns'] = ('username', "stock's name", 'quantity', "stock's price", 'trade-type', 
+                                'trade-date', 'trade-time','start-time', 'end-time')
+
+    # Format our columns
+    record_tree.column("#0", width=60, minwidth=10, anchor=W)
+    record_tree.column("username", width=120, minwidth=80, anchor=CENTER)                            
+    record_tree.column("stock's name", width=80, minwidth=80, anchor=CENTER)                            
+    record_tree.column("quantity", width=80, minwidth=30, anchor=CENTER)
+    record_tree.column("stock's price", width=80, minwidth=30, anchor=CENTER)
+    record_tree.column("trade-type", width=80, minwidth=10, anchor=CENTER)
+    record_tree.column("trade-date", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("trade-time", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("start-time", width=120, minwidth=20, anchor=CENTER)
+    record_tree.column("end-time", width=120, minwidth=20, anchor=CENTER)
+
+    # Create Heading
+    record_tree.heading("#0", text="ID", anchor=CENTER)
+    record_tree.heading("username", text="username", anchor=CENTER)
+    record_tree.heading("stock's name", text="نام سهم", anchor=CENTER)
+    record_tree.heading("quantity", text="تعداد", anchor=CENTER)
+    record_tree.heading("stock's price", text="قیمت", anchor=CENTER)
+    record_tree.heading("trade-type", text="نوع معامله", anchor=CENTER)
+    record_tree.heading("trade-date", text="تاریخ معامله", anchor=CENTER)
+    record_tree.heading("trade-time", text="زمان سفارش", anchor=CENTER)
+    record_tree.heading("start-time", text="زمان شروع", anchor=CENTER)
+    record_tree.heading("end-time", text="زمان پایان", anchor=CENTER)
+
+    trade_type = {"B": "خرید", 
+                  "S": "فروش"}
+
+    record_tree.tag_configure("buy", background="#00cc00")
+    record_tree.tag_configure("sell", background="#ff4d4d")
+
+    count = 0
+    records = StockData('record')
+    for record in records.show():
+        if record[4] == 'B':
+            color_type = "buy",
+        else:
+            color_type = "sell"
+
+        record_tree.insert(parent="", index="end", iid=count, text=record[9], values=(record[0], record[1], record[2], 
+                                                                                        record[3], trade_type[record[4]],
+                                                                                        record[5], record[6], record[7], 
+                                                                                        record[8]),
+                                                                                        tags=(color_type,))
+        count += 1                                                                            
+
+        def remove_many(event):
+            x = record_tree.selection()
+            _x = [int(record_tree.item(i)['text']) for i in x]
+            for pk in _x:
+                delete_record = StockData('record')
+                delete_record.delete(pk=pk)
+
+            for _record in x:
+                record_tree.delete(_record)
+
+        def up():
+            rows = record_tree.selection()
+            for row in rows:
+                record_tree.move(row, record_tree.parent(row), record_tree.index(row)-1)
+
+        def down():
+            rows = record_tree.selection()
+            for row in reversed(rows):
+                record_tree.move(row, record_tree.parent(row), record_tree.index(row)+1)
+
+
+        remove_button = Button(new, text="حذف", bg='#ff0000', fg="black", font=("Helvatica", 13), command=lambda: remove_many(0), width=20)
+        remove_button.grid(row=3, column=1)
+        record_tree.bind("<Delete>", remove_many)
+
+        move_up = Button(new, text="\U0001F815", font=10, command=up)
+        move_up.grid(row=3, column=1, padx=(300, 0))        
+
+        move_down = Button(new, text="\U0001F817", font=10, command=down)
+        move_down.grid(row=3, column=1, padx=(0, 300))        
+
 
 # for main window
 def save_info():
@@ -440,10 +572,10 @@ def ui():
     cost_label_text = Label(root, text="قیمت کل خرید/فروش", fg='red')
     cost_label_text.grid(row=9, column=0)
 
-    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('b'), width=5)
+    buy_btn = Button(root, text='خرید', bg='green', font=("Helvatica", 10), fg='black', command=lambda: order('B'), width=5)
     buy_btn.grid(row=10, column=0, pady=10)
 
-    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('s'), width=5)
+    sell_btn = Button(root, text='فروش', bg='red', font=("Helvatica", 10), fg='black', command=lambda: order('S'), width=5)
     sell_btn.grid(row=10, column=1)
 
     save_btn = Button(root, text='ذخیره اطلاعات', bg='grey', font=("Helvatica", 10), fg='black', command=save_info, width=10)
@@ -454,6 +586,7 @@ def ui():
     _file = Menu(menubar, tearoff=0)
     _file.add_command(label="Refresh           \U0001F504", command=refresh)
     _file.add_command(label="Save info        \U0001F4BE", command=save_info)
+    _file.add_command(label="Records          \U0000241E", command=record_history)
     _file.add_separator()
     _file.add_command(label="Exit                 \U0000274C", command=lambda: root.destroy())
     menubar.add_cascade(label="File", menu=_file)
